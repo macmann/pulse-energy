@@ -132,11 +132,12 @@ const MONTHLY_BILLS = monthlyBills as MonthlyBill[];
 const INSIGHT_EVENTS = insightEvents as InsightEvent[];
 const SPOT_PRICES = (dynamicPrices as { prices: SpotPrice[] }).prices;
 
-const TIMESERIES_ASSETS: Record<string, { url: string }> = {
-  "HH-1001": asset1001,
-  "HH-1002": asset1002,
-  "HH-1003": asset1003,
-  "HH-1004": asset1004,
+type AssetRef = { url: string; project_id?: string; asset_id?: string; original_filename?: string };
+const TIMESERIES_ASSETS: Record<string, AssetRef> = {
+  "HH-1001": asset1001 as AssetRef,
+  "HH-1002": asset1002 as AssetRef,
+  "HH-1003": asset1003 as AssetRef,
+  "HH-1004": asset1004 as AssetRef,
 };
 
 // ----- Simple references -----
