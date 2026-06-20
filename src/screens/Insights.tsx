@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Dataset } from "../lib/data";
+import type { InsightEvent } from "../types";
 import { buildInsights } from "../lib/views";
 import { DEMO_TODAY, DEMO_WINTER } from "../lib/demo";
 import { hourLabel } from "../lib/format";
@@ -20,6 +21,15 @@ const CLS_LABEL: Record<string, string> = {
   battery: "Battery",
   cheap: "Cheap grid",
   avoid: "Avoid",
+};
+
+type InsightCategory = "all" | InsightEvent["type"];
+
+const CATEGORY_LABEL: Record<InsightCategory, string> = {
+  all: "All",
+  anomaly: "Anomalies",
+  nudge: "Nudges",
+  insight: "Insights",
 };
 
 export function Insights({
@@ -32,7 +42,13 @@ export function Insights({
   onScrolled: () => void;
 }) {
   const [bandDate, setBandDate] = useState(DEMO_TODAY);
+  const [category, setCategory] = useState<InsightCategory>("all");
   const iv = useMemo(() => buildInsights(ds, bandDate), [ds, bandDate]);
+  const categorizedInsights = useMemo(() => {
+    return category === "all"
+      ? ds.insights
+      : ds.insights.filter((event) => event.type === category);
+  }, [category, ds.insights]);
 
   useEffect(() => {
     if (!scrollTo) return;
@@ -106,6 +122,35 @@ export function Insights({
         </p>
       </div>
 
+
+      <section className="card card-pad actual-insights" style={{ marginTop: 16 }}>
+        <div className="between">
+          <div>
+            <div className="metric-label" style={{ fontSize: 13 }}>Actual data insights</div>
+            <h2 style={{ fontSize: 18, marginTop: 2 }}>Meter-backed categories</h2>
+          </div>
+          <span className="pill info">{categorizedInsights.length}</span>
+        </div>
+        <p className="report-note" style={{ marginTop: 8 }}>
+          These cards use the existing mock insight categories, but the copy is grounded in the loaded household event data instead of placeholder text.
+        </p>
+        <div className="row category-row" style={{ marginTop: 12, gap: 8 }}>
+          {(["all", "anomaly", "nudge", "insight"] as InsightCategory[]).map((c) => (
+            <DayToggle
+              key={c}
+              label={CATEGORY_LABEL[c]}
+              active={category === c}
+              onClick={() => setCategory(c)}
+            />
+          ))}
+        </div>
+        <div className="stack" style={{ marginTop: 14 }}>
+          {categorizedInsights.map((event) => (
+            <ActualInsightCard key={`${event.type}-${event.period}-${event.title}`} event={event} />
+          ))}
+        </div>
+      </section>
+
       {/* reports */}
       {iv.reports.map((r) => (
         <section key={r.id} id={r.id} className="card card-pad report" style={{ marginTop: 16 }}>
@@ -123,6 +168,21 @@ export function Insights({
         </section>
       ))}
     </div>
+  );
+}
+
+function ActualInsightCard({ event }: { event: InsightEvent }) {
+  const severity = event.severity === "high" ? "high" : "info";
+  return (
+    <article className={`actual-insight-card ${event.type}`}>
+      <div className="between">
+        <span className="metric-label">{CATEGORY_LABEL[event.type]}</span>
+        <span className={`pill ${severity}`}>{event.period}</span>
+      </div>
+      <h3>{event.title}</h3>
+      <p>{event.detail}</p>
+      <div className="actual-action">{event.suggested_action}</div>
+    </article>
   );
 }
 
