@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Pulse Energy app icon</title>
+  <desc id="desc">A yellow rounded-square icon with a white energy pulse and green leaf.</desc>
+  <rect width="512" height="512" rx="112" fill="#f5b50a"/>
+  <path d="M128 294h70l34-88 53 152 38-96h61" fill="none" stroke="#fff" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M336 172c48-44 108-36 108-36s8 60-36 108c-30 32-76 36-104 12-24-28-20-74 32-84Z" fill="#16a34a"/>
+  <path d="M342 238c24-28 52-48 86-68" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round"/>
+</svg>
