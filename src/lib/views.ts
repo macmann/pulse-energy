@@ -15,6 +15,7 @@ import {
   type HourBand,
 } from "./engine";
 import { DEMO_TODAY } from "./demo";
+import { eur, signedEur } from "./format";
 
 const STEP_H = 0.25;
 
@@ -56,8 +57,10 @@ export type Metric = {
   id: "report-savings" | "report-export" | "report-selfsuf";
   label: string;
   value: string;
-  // change vs last week, already interpreted as good/bad (NOT up/down)
+  // The arrow shows the DIRECTION the metric moved; the color (changeGood)
+  // encodes whether that move is good or bad — direction and meaning are separate.
   changeText: string;
+  changeUp: boolean;
   changeGood: boolean;
 };
 
@@ -78,36 +81,35 @@ export function buildHome(ds: Dataset): HomeView {
   const metrics: Metric[] = [
     {
       id: "report-savings",
-      label: "How much did I save this week?",
-      value: `€${Math.round(thisWeek.savedEur)}`,
-      changeText: `${fmtSigned(savedDelta, "€")} vs last week`,
+      label: "Money saved",
+      value: eur(thisWeek.savedEur), // €X.XX
+      changeText: `${signedEur(savedDelta)} vs last week`,
+      changeUp: savedDelta >= 0,
       changeGood: savedDelta >= 0, // saving more is good
     },
     {
       id: "report-export",
-      label: "How much did I give to the grid?",
-      value: `${thisWeek.givenKwh.toFixed(0)} kWh`,
-      changeText: `${fmtSigned(givenDelta, "kWh")} vs last week`,
+      label: "Energy sent to grid",
+      value: `${thisWeek.givenKwh.toFixed(1)} kWh`, // kWh 1 decimal
+      changeText: `${Math.abs(givenDelta).toFixed(1)} kWh ${
+        givenDelta >= 0 ? "more" : "less"
+      }`,
+      changeUp: givenDelta >= 0,
       changeGood: givenDelta <= 0, // giving away MORE free solar is bad
     },
     {
       id: "report-selfsuf",
-      label: "How self-sufficient am I?",
-      value: `${thisWeek.selfSuffPct}%`,
-      changeText: `${fmtSigned(selfDelta, "pp")} vs last week`,
+      label: "Self-sufficiency",
+      value: `${thisWeek.selfSuffPct}%`, // % integer
+      changeText: `${selfDelta >= 0 ? "up" : "down"} ${Math.abs(
+        selfDelta,
+      )} pts vs last week`,
+      changeUp: selfDelta >= 0,
       changeGood: selfDelta >= 0, // more self-sufficient is good
     },
   ];
 
   return { thisWeek, lastWeek, metrics };
-}
-
-function fmtSigned(n: number, unit: "€" | "kWh" | "pp"): string {
-  const sign = n >= 0 ? "+" : "−";
-  const v = Math.abs(n);
-  if (unit === "€") return `${sign}€${v.toFixed(0)}`;
-  if (unit === "kWh") return `${sign}${v.toFixed(0)} kWh`;
-  return `${sign}${v.toFixed(0)} pts`;
 }
 
 // ---- Insights ----
@@ -154,7 +156,7 @@ export function buildInsights(ds: Dataset, bandDate = DEMO_TODAY): InsightsView 
   const reports: ReportView[] = [
     {
       id: "report-savings",
-      title: "What you saved",
+      title: "Money saved",
       big: `€${Math.round(evShift.savingPerMonthEur + 15)}/mo`,
       changeText: "by using your own solar & battery first",
       changeGood: true,
@@ -167,7 +169,7 @@ export function buildInsights(ds: Dataset, bandDate = DEMO_TODAY): InsightsView 
     },
     {
       id: "report-export",
-      title: "What you gave to the grid",
+      title: "Energy sent to grid",
       big: `${surplusYear.exportedKwh.toFixed(0)} kWh`,
       changeText: `earned only €${surplusYear.feedInEarned.toFixed(
         0,
@@ -184,7 +186,7 @@ export function buildInsights(ds: Dataset, bandDate = DEMO_TODAY): InsightsView 
     },
     {
       id: "report-selfsuf",
-      title: "How self-sufficient you are",
+      title: "Self-sufficiency",
       big: `${lastBill.self_sufficiency_pct.toFixed(0)}%`,
       changeText: `${
         lastBill.self_sufficiency_pct >= prevBill.self_sufficiency_pct
@@ -193,7 +195,7 @@ export function buildInsights(ds: Dataset, bandDate = DEMO_TODAY): InsightsView 
       } from ${prevBill.self_sufficiency_pct.toFixed(0)}% last month`,
       changeGood: lastBill.self_sufficiency_pct >= prevBill.self_sufficiency_pct,
       chartKind: "selfsuf",
-      note: `Self-sufficiency is the share of your power that came from your own roof and battery. It peaks in spring (${Math.max(
+      note: `Self-sufficiency is the share of your energy that came from your own solar and battery. It peaks in spring (${Math.max(
         ...ds.bills.map((b) => b.self_sufficiency_pct),
       ).toFixed(
         0,
