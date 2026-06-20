@@ -1,6 +1,6 @@
 {
-  "name": "Enpal Pulse Energy",
-  "short_name": "Pulse Energy",
+  "name": "Enpal Pulse",
+  "short_name": "Enpal Pulse",
   "description": "Track energy usage, routines, insights, and assistant recommendations for your Enpal home.",
   "start_url": "/",
   "scope": "/",
@@ -14,7 +14,7 @@
       "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
