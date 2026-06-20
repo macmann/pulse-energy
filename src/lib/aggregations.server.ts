@@ -68,11 +68,27 @@ export type DailySummary = {
   battery_soc_pct_current: number;
 };
 
+export type LiveSnapshot = {
+  timestamp: string;
+  pv_kw: number;
+  house_load_kw: number;
+  heatpump_kw: number;
+  ev_kw: number;
+  battery_charge_kw: number;
+  battery_discharge_kw: number;
+  battery_soc_pct: number;
+  grid_import_kw: number;
+  grid_export_kw: number;
+  price_eur_per_kwh: number;
+  outdoor_temp_c: number;
+};
+
 export type TodayView = {
   date: string;
   summary: DailySummary;
   hourly: HourlyAggregate[];
   cheapest_3h_window: { start_hour: number; end_hour: number; avg_price_eur_per_kwh: number };
+  now: LiveSnapshot;
 };
 
 function aggregateHourly(records: TimeseriesRecord[]): HourlyAggregate[] {
@@ -184,11 +200,36 @@ export async function buildTodayView(householdId: string, origin: string): Promi
   const today = recordsForDate(records, DEMO_TODAY);
   const hourly = aggregateHourly(today);
   const summary = summarizeDay(today, DEMO_TODAY);
+
+  // Pick the 15-min record closest to the synthetic "now" hour.
+  const target = `${DEMO_TODAY}T${String(DEMO_NOW_HOUR).padStart(2, "0")}:00`;
+  const live =
+    today.find((r) => r.timestamp.startsWith(target)) ??
+    today[Math.min(DEMO_NOW_HOUR * 4, today.length - 1)] ??
+    today[today.length - 1] ??
+    records[records.length - 1];
+
+  const now: LiveSnapshot = {
+    timestamp: live.timestamp,
+    pv_kw: round(live.pv_production_kw, 2),
+    house_load_kw: round(live.house_load_kw, 2),
+    heatpump_kw: round(live.heatpump_kw, 2),
+    ev_kw: round(live.ev_charging_kw, 2),
+    battery_charge_kw: round(live.battery_charge_kw, 2),
+    battery_discharge_kw: round(live.battery_discharge_kw, 2),
+    battery_soc_pct: round(live.battery_soc_pct, 1),
+    grid_import_kw: round(live.grid_import_kw, 2),
+    grid_export_kw: round(live.grid_export_kw, 2),
+    price_eur_per_kwh: round(live.price_eur_per_kwh, 4),
+    outdoor_temp_c: round(live.outdoor_temp_c, 1),
+  };
+
   return {
     date: DEMO_TODAY,
     summary,
     hourly,
     cheapest_3h_window: cheapestWindow(hourly, 3),
+    now,
   };
 }
 
