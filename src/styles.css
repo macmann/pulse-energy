@@ -146,11 +146,21 @@ h3 {
 .metric-change.bad {
   color: var(--bad);
 }
-.metric-see {
-  margin-top: auto;
-  font-size: 12px;
-  color: var(--accent-ink);
-  font-weight: 600;
+.metric-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.metric-expand {
+  flex: 0 0 auto;
+  display: flex;
+  color: #c2c7ce; /* tertiary by default */
+  transition: color 0.12s;
+  margin-top: 1px;
+}
+.metric-card:hover .metric-expand {
+  color: var(--muted); /* darken to secondary on tile hover */
 }
 .metric-placeholder {
   border: 1.5px dashed var(--line);

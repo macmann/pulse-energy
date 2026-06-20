@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Car,
   Check,
+  Maximize2,
   Plus,
   WashingMachine,
 } from "lucide-react";
@@ -46,17 +47,25 @@ export function Home({
             className="metric-card"
             onClick={() => onOpenReport(m.id)}
           >
-            <span className="metric-label">{m.label}</span>
+            <span className="metric-top">
+              <span className="metric-label">{m.label}</span>
+              <span
+                className="metric-expand"
+                role="img"
+                aria-label="Open full breakdown"
+              >
+                <Maximize2 size={15} />
+              </span>
+            </span>
             <span className="metric-value">{m.value}</span>
             <span className={`metric-change ${m.changeGood ? "good" : "bad"}`}>
-              {m.changeGood ? (
+              {m.changeUp ? (
                 <ArrowUpRight size={13} />
               ) : (
                 <ArrowDownRight size={13} />
               )}
               {m.changeText}
             </span>
-            <span className="metric-see">see breakdown →</span>
           </button>
         ))}
         <div className="metric-placeholder">
