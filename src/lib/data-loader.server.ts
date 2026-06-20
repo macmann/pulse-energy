@@ -178,8 +178,15 @@ export function getSpotPrices(): SpotPrice[] {
 // ----- Timeseries (lazy + cached) -----
 const tsCache = new Map<string, Promise<TimeseriesRecord[]>>();
 
-function buildAssetUrl(relative: string, origin: string) {
-  return relative.startsWith("http") ? relative : `${origin}${relative}`;
+function buildAssetUrl(asset: AssetRef, origin: string) {
+  if (asset.url.startsWith("http")) return asset.url;
+  // Prefer the project's public lovableproject.com host so SSR (which may be
+  // running on localhost where /__l5e/* is not served) can always reach the
+  // CDN-hosted asset directly.
+  if (asset.project_id) {
+    return `https://${asset.project_id}.lovableproject.com${asset.url}`;
+  }
+  return `${origin}${asset.url}`;
 }
 
 export async function getTimeseries(
@@ -190,7 +197,7 @@ export async function getTimeseries(
   if (existing) return existing;
   const asset = TIMESERIES_ASSETS[householdId];
   if (!asset) throw new Error(`No timeseries asset for ${householdId}`);
-  const url = buildAssetUrl(asset.url, origin);
+  const url = buildAssetUrl(asset, origin);
   const promise = (async () => {
     const res = await fetch(url);
     if (!res.ok) {
