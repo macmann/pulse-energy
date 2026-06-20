@@ -2,14 +2,14 @@ import { useChat } from "@ai-sdk/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { DefaultChatTransport } from "ai";
 import { ArrowUp, Database, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { z } from "zod";
 
-import { AppShell } from "@/components/AppShell";
+import { AppShell, useActiveHouseholdId } from "@/components/AppShell";
 import { toolSourceLabels } from "@/lib/agent-tool-labels";
 
-const searchSchema = z.object({ q: z.string().optional() });
+const searchSchema = z.object({ q: z.string().optional(), hh: z.string().optional() });
 
 export const Route = createFileRoute("/chat")({
   head: () => ({
@@ -31,14 +31,28 @@ const SUGGESTIONS = [
 
 function ChatPage() {
   const { q } = Route.useSearch();
+  const householdId = useActiveHouseholdId();
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const submittedQ = useRef(false);
+  const submittedQ = useRef<string | null>(null);
 
-  const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-  });
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/chat",
+        body: { householdId },
+      }),
+    [householdId],
+  );
+
+  const { messages, sendMessage, status, setMessages } = useChat({ transport });
+
+  // Clear conversation when household changes so context isn't mixed.
+  useEffect(() => {
+    setMessages([]);
+    submittedQ.current = null;
+  }, [householdId, setMessages]);
 
   const isLoading = status === "submitted" || status === "streaming";
 
@@ -50,10 +64,10 @@ function ChatPage() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, status]);
 
-  // Auto-send q from deep link
+  // Auto-send q from deep link (once per unique q)
   useEffect(() => {
-    if (q && !submittedQ.current) {
-      submittedQ.current = true;
+    if (q && submittedQ.current !== q) {
+      submittedQ.current = q;
       sendMessage({ text: q });
     }
   }, [q, sendMessage]);
@@ -147,7 +161,6 @@ function MessageBubble({ message }: { message: UIMsg }) {
     .map((p) => p.text)
     .join("");
 
-  // Collect tool names used so we can show a "based on" tag
   const toolNames = new Set<string>();
   for (const part of message.parts) {
     const t = (part as { type: string }).type;
