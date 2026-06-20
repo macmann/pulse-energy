@@ -4,12 +4,13 @@
 // replace `answer()` later without touching the UI. See MCP note in the README.
 
 import type { Dataset } from "./data";
+import type { ActionId } from "./engine";
 import { buildInsights } from "./views";
 
 export type AssistantReply = {
   toolLabel: string; // shown as a chip above the answer: how the AI reasoned
   text: string;
-  routineId?: string; // if set, the answer offers a "Set this routine" button
+  actionId?: ActionId; // if set, the answer offers an "Add to my goals" button
 };
 
 export type Starter = { q: string };
@@ -54,7 +55,7 @@ export function answer(question: string, ds: Dataset): AssistantReply {
       )}/kWh. If you'd used that solar yourself it would have been worth about €${s.valueIfSelfUsed.toFixed(
         0,
       )}. The biggest single fix is the car.`,
-      routineId: "ev-on-solar",
+      actionId: "ev_solar_charge",
     };
   }
 
@@ -62,7 +63,7 @@ export function answer(question: string, ds: Dataset): AssistantReply {
     return {
       toolLabel: "reviewed your tariff terms",
       text: `You're on Enpal FlexStrom Dynamic — the price follows the hourly market plus a fixed €0.119/kWh, with a €12.90/mo base fee. It's a good fit *if* you move flexible loads into cheap hours. Right now you're not capturing that: the car charges at midnight on grid power while your cheapest, free energy sits unused at midday. On a flat tariff that gap wouldn't matter — on yours it's worth about €${iv.evShift.savingPerMonthEur}/mo.`,
-      routineId: "ev-on-solar",
+      actionId: "ev_solar_charge",
     };
   }
 
@@ -79,7 +80,7 @@ export function answer(question: string, ds: Dataset): AssistantReply {
       ).toFixed(
         0,
       )}. You could take roughly €${iv.evShift.savingPerMonthEur} off that by charging the car on daytime solar instead of the midnight grid.`,
-      routineId: "ev-on-solar",
+      actionId: "ev_solar_charge",
     };
   }
 
@@ -93,7 +94,7 @@ export function answer(question: string, ds: Dataset): AssistantReply {
       )}:00 and pulls ${ev.totalKwh.toFixed(
         0,
       )} kWh a year — only ${ev.pctFromSolar}% of it from your own solar. Moving charging into the 11:00–15:00 sun would save about €${iv.evShift.savingPerMonthEur}/mo, and it's physically possible on ${iv.evShift.coverablePct}% of days (car home + surplus). Honest caveat: the charger draws 11 kW and your battery only pushes 5 kW, so on a cloudy day you'll still pull some grid.`,
-      routineId: "ev-on-solar",
+      actionId: "ev_solar_charge",
     };
   }
 
@@ -103,6 +104,6 @@ export function answer(question: string, ds: Dataset): AssistantReply {
     text: `I can help with your bill, your solar export, your tariff, or a forecast. The thing that stands out most in your data: your car charges at midnight on grid power while ${iv.surplusYear.exportedKwh.toFixed(
       0,
     )} kWh of free solar went to the grid this year. Want me to look at shifting it?`,
-    routineId: "ev-on-solar",
+    actionId: "ev_solar_charge",
   };
 }

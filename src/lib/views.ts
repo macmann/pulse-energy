@@ -8,11 +8,15 @@ import {
   classifyDay,
   evPattern,
   evWaste,
+  kmNotDriven,
+  rankRecommendations,
   recordsBetween,
   recordsForDate,
   round,
+  savedThisMonth,
   surplusSummary,
   type HourBand,
+  type Recommendation,
 } from "./engine";
 import { DEMO_TODAY } from "./demo";
 import { eur, signedEur } from "./format";
@@ -68,6 +72,7 @@ export type HomeView = {
   thisWeek: WeekStats;
   lastWeek: WeekStats;
   metrics: Metric[];
+  reminders: Recommendation[]; // top items from the same ranked list as Goals
 };
 
 export function buildHome(ds: Dataset): HomeView {
@@ -109,7 +114,13 @@ export function buildHome(ds: Dataset): HomeView {
     },
   ];
 
-  return { thisWeek, lastWeek, metrics };
+  // Home reminders are the top 1–2 non-minor items from the same ranked list the
+  // Goals screen uses, so the two screens always agree.
+  const reminders = rankRecommendations(ds.records, DEMO_TODAY)
+    .filter((r) => !r.minor)
+    .slice(0, 2);
+
+  return { thisWeek, lastWeek, metrics, reminders };
 }
 
 // ---- Insights ----
@@ -206,22 +217,34 @@ export function buildInsights(ds: Dataset, bandDate = DEMO_TODAY): InsightsView 
   return { band, best, worst, reports, trend, ev, evShift, surplusYear };
 }
 
-// ---- Routines payoff numbers ----
+// ---- Goals ----
 
-export type RoutinesView = {
-  monthBill: number;
-  prevMonthBill: number;
-  simulatedBill: number; // bill if all 3 routines followed
-  stackSaveEur: number;
+export type GoalsView = {
+  recommendations: Recommendation[]; // ranked € desc
+  baseSavedEur: number; // captured this month so far (computed from the meter)
+  baseSavedCo2Kg: number;
+  baseKmNotDriven: number;
+  potentialEur: number; // sum of active recommendations' monthly potential
+  potentialCo2Kg: number;
 };
 
-export function buildRoutines(ds: Dataset, totalRoutineSave: number): RoutinesView {
-  const lastBill = ds.bills[ds.bills.length - 1];
-  const prevBill = ds.bills[ds.bills.length - 2];
+export function buildGoals(ds: Dataset): GoalsView {
+  const recommendations = rankRecommendations(ds.records, DEMO_TODAY);
+  const s = savedThisMonth(ds.records, DEMO_TODAY);
+  const potentialEur = recommendations.reduce(
+    (a, r) => a + r.monthlyPotentialEur,
+    0,
+  );
+  const potentialCo2Kg = recommendations.reduce(
+    (a, r) => a + r.monthlyPotentialCo2Kg,
+    0,
+  );
   return {
-    monthBill: round(lastBill.total_bill_eur, 2),
-    prevMonthBill: round(prevBill.total_bill_eur, 2),
-    simulatedBill: round(Math.max(0, lastBill.total_bill_eur - totalRoutineSave), 2),
-    stackSaveEur: totalRoutineSave,
+    recommendations,
+    baseSavedEur: s.eur,
+    baseSavedCo2Kg: s.co2Kg,
+    baseKmNotDriven: kmNotDriven(s.co2Kg),
+    potentialEur: round(potentialEur, 2),
+    potentialCo2Kg: round(potentialCo2Kg, 1),
   };
 }

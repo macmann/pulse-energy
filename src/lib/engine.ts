@@ -342,3 +342,212 @@ export function round(n: number, d = 0): number {
   const f = Math.pow(10, d);
   return Math.round(n * f) / f;
 }
+
+// ---------------------------------------------------------------------------
+// Recommendations — ranked by money impact (€ first, CO₂ second).
+//
+// Every recommendation's numbers are COMPUTED from the meter, never hardcoded,
+// so personalization falls out automatically: a fixed-tariff home has no
+// time-of-day grid savings, so its ranking is driven by solar self-consumption
+// alone — no special-casing required.
+// ---------------------------------------------------------------------------
+
+// CO₂ intensity of the German grid mix, ~0.38 kg CO₂e per kWh (UBA, 2023).
+// Self-consuming a kWh of your own solar avoids importing one grid kWh.
+export const CO2_KG_PER_KWH = 0.38;
+// Petrol car ~0.12 kg CO₂ per km — used to express avoided CO₂ as "km not driven".
+export const CO2_KG_PER_KM = 0.12;
+// Actions worth less than this per day are "minor" and rolled away so the
+// screen leads with what matters.
+export const MINOR_EUR_PER_DAY = 0.2;
+
+export type ActionId =
+  | "ev_solar_charge"
+  | "preheat_cheap_window"
+  | "appliances_midday";
+
+export type ActionDef = {
+  id: ActionId;
+  icon: "ev" | "preheat" | "appliances";
+  title: string;
+  sentence: string;
+  load: "ev_charging_kw" | "heatpump_kw" | "house_load_kw";
+  fromHours: [number, number]; // when the load runs on grid today
+  toHours: [number, number]; // cheap/solar window to move it into
+};
+
+export const ACTION_DEFS: ActionDef[] = [
+  {
+    id: "ev_solar_charge",
+    icon: "ev",
+    title: "Charge the car on solar",
+    sentence:
+      "Start charging around midday instead of overnight, so the car runs on your own sunshine.",
+    load: "ev_charging_kw",
+    fromHours: [0, 6],
+    toHours: [11, 15],
+  },
+  {
+    id: "preheat_cheap_window",
+    icon: "preheat",
+    title: "Pre-heat in the sunny window",
+    sentence:
+      "Let the heat pump warm the house at midday instead of the expensive evening peak.",
+    load: "heatpump_kw",
+    fromHours: [17, 21],
+    toHours: [11, 16],
+  },
+  {
+    id: "appliances_midday",
+    icon: "appliances",
+    title: "Run appliances at midday",
+    sentence:
+      "Set the dishwasher and laundry to run while your panels are making free power.",
+    load: "house_load_kw",
+    fromHours: [18, 22],
+    toHours: [11, 15],
+  },
+];
+
+function inHours(h: number, [a, b]: [number, number]) {
+  return h >= a && h < b;
+}
+
+// Average energy (kWh) this load uses during `fromHours` on a typical day across
+// the whole history. The `from` windows are night/evening with little or no sun,
+// so this energy effectively comes from the grid (or battery) — it's exactly the
+// chunk a shift onto midday solar would cover. Using the typical day (not whether
+// the load happened to run on one date) keeps today's estimate stable.
+function typicalDailyShiftable(records: TimeseriesRecord[], def: ActionDef): number {
+  let load = 0;
+  const days = new Set<string>();
+  for (const r of records) {
+    days.add(dateKey(r.timestamp));
+    if (inHours(hourOf(r.timestamp), def.fromHours)) load += r[def.load] * STEP_H;
+  }
+  return days.size > 0 ? load / days.size : 0;
+}
+
+// Solar surplus (exported kWh) available to absorb a shifted load during `hours`.
+function windowSurplus(window: TimeseriesRecord[], hours: [number, number]): number {
+  let s = 0;
+  for (const r of window) {
+    if (inHours(hourOf(r.timestamp), hours)) s += r.grid_export_kw * STEP_H;
+  }
+  return s;
+}
+
+// Average retail price during `hours` — the per-kWh price a shift would avoid.
+function windowAvgPrice(window: TimeseriesRecord[], hours: [number, number]): number {
+  let sum = 0;
+  let n = 0;
+  for (const r of window) {
+    if (inHours(hourOf(r.timestamp), hours)) {
+      sum += r.price_eur_per_kwh;
+      n++;
+    }
+  }
+  if (n > 0) return sum / n;
+  // fall back to the whole day's average price
+  const all = window.reduce((a, r) => a + r.price_eur_per_kwh, 0);
+  return window.length > 0 ? all / window.length : 0;
+}
+
+// Today's opportunity for an action: shift the load's typical grid usage onto
+// the solar surplus actually available today. € per shifted kWh = the grid price
+// you'd avoid minus the feed-in you'd forgo (≈ price − 0.081).
+function todayOpportunity(
+  records: TimeseriesRecord[],
+  today: TimeseriesRecord[],
+  def: ActionDef,
+): { eur: number; kwh: number } {
+  const typical = typicalDailyShiftable(records, def);
+  const surplus = windowSurplus(today, def.toHours);
+  const coverable = Math.min(typical, surplus);
+  const price = windowAvgPrice(today, def.fromHours);
+  return { kwh: coverable, eur: Math.max(0, coverable * (price - FEED_IN)) };
+}
+
+// Money already captured for an action: load that ran in its solar/cheap window
+// covered by your own solar (not the grid), valued at price − feed-in.
+function realized(
+  window: TimeseriesRecord[],
+  def: ActionDef,
+): { eur: number; kwh: number } {
+  let eur = 0;
+  let kwh = 0;
+  for (const r of window) {
+    const h = hourOf(r.timestamp);
+    if (h < def.toHours[0] || h >= def.toHours[1]) continue;
+    const loadKwh = r[def.load] * STEP_H;
+    if (loadKwh <= 0) continue;
+    const gridShare =
+      r.total_consumption_kw > 0 ? r.grid_import_kw / r.total_consumption_kw : 0;
+    const solarLoadKwh = loadKwh * Math.max(0, 1 - gridShare);
+    kwh += solarLoadKwh;
+    eur += solarLoadKwh * (r.price_eur_per_kwh - FEED_IN);
+  }
+  return { eur, kwh };
+}
+
+function monthStart(date: string): string {
+  return date.slice(0, 8) + "01";
+}
+
+export type Recommendation = {
+  id: ActionId;
+  icon: ActionDef["icon"];
+  title: string;
+  sentence: string;
+  todaySaveEur: number;
+  todayCo2Kg: number;
+  monthlyPotentialEur: number;
+  monthlyPotentialCo2Kg: number;
+  minor: boolean; // worth < MINOR_EUR_PER_DAY today
+};
+
+// Ranked recommendations (€ desc). The Goals screen and Home reminders both
+// read this list, so they stay consistent.
+export function rankRecommendations(
+  records: TimeseriesRecord[],
+  date: string,
+): Recommendation[] {
+  const today = recordsForDate(records, date);
+  const DAYS_PER_MONTH = 30;
+  const recs: Recommendation[] = ACTION_DEFS.map((def) => {
+    const t = todayOpportunity(records, today, def);
+    return {
+      id: def.id,
+      icon: def.icon,
+      title: def.title,
+      sentence: def.sentence,
+      todaySaveEur: round(t.eur, 2),
+      todayCo2Kg: round(t.kwh * CO2_KG_PER_KWH, 1),
+      monthlyPotentialEur: round(t.eur * DAYS_PER_MONTH, 2),
+      monthlyPotentialCo2Kg: round(t.kwh * DAYS_PER_MONTH * CO2_KG_PER_KWH, 1),
+      minor: t.eur < MINOR_EUR_PER_DAY,
+    };
+  });
+  return recs.sort((a, b) => b.todaySaveEur - a.todaySaveEur);
+}
+
+// Real running total captured this month so far for the recommended actions —
+// the "saved this month" hero figure. Computed, never hardcoded.
+export function savedThisMonth(
+  records: TimeseriesRecord[],
+  date: string,
+): { eur: number; kwh: number; co2Kg: number } {
+  const window = recordsBetween(records, monthStart(date), date);
+  let eur = 0;
+  let kwh = 0;
+  for (const def of ACTION_DEFS) {
+    const r = realized(window, def);
+    eur += r.eur;
+    kwh += r.kwh;
+  }
+  return { eur: round(eur, 2), kwh: round(kwh, 1), co2Kg: round(kwh * CO2_KG_PER_KWH, 1) };
+}
+
+export function kmNotDriven(co2Kg: number): number {
+  return co2Kg / CO2_KG_PER_KM;
+}

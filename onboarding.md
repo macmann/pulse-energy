@@ -10,7 +10,7 @@ Your cheapest energy is almost always your own — the solar your panels make an
 
 ## The four screens
 
-Pulse has four tabs along the bottom: Home · Insights · Assistant · Routines. Here's what each is for.
+Pulse has four tabs along the bottom: Home · Insights · Assistant · Goals. Here's what each is for.
 
 ### Home — your day at a glance
 
@@ -22,7 +22,7 @@ This is where you land. It answers one question: is my home doing well today?
   - **Energy sent to grid** — surplus solar you exported. Selling it back earns only a few cents per kWh, so a high number here is a sign there's power you could be using yourself.
   - **Self-sufficiency** — the share of your energy that came from your own solar and battery rather than the grid.
 - Each tile shows how it changed versus last week. Tap the expand icon (top-right of a tile) to open its full breakdown in Insights.
-- **Reminders for you** — a couple of timely nudges, like "charge the car at midday, not midnight." Each has a Set reminder button. Setting one turns it into a routine Pulse will help you keep (more on that below).
+- **Reminders for you** — a couple of timely nudges, like "charge the car at midday, not midnight," each already showing its "＋€X today" impact. Each has a Set reminder button. Setting one adds it to your goals (more on that below).
 
 ### Insights — the why behind the numbers
 
@@ -45,26 +45,26 @@ A chat that knows your home's energy. Ask it questions the way you'd ask a knowl
 - "How much am I giving away to the grid?"
 - "Is my tariff still a good deal?"
 
-It answers using your actual data, in plain words — and when it suggests something useful, you can turn that suggestion straight into a routine with one tap. If you're not sure what to ask, tap one of the suggested questions to get started.
+It answers using your actual data, in plain words — and when it suggests something useful, you can add that suggestion straight to your goals with one tap. If you're not sure what to ask, tap one of the suggested questions to get started.
 
-### Routines — building good habits
+### Goals — recommendations and their impact
 
-Routines are the small, repeatable energy habits that save you money — like charging the car on solar, running appliances at midday, or pre-heating the house in a cheap hour.
+Goals turns Pulse's recommendations into a running savings tally. Every suggestion leads with its impact — money first, CO₂ second — so you always know what's worth doing.
 
-- Each routine shows a 7-day streak: a green dot for every day you kept it, grey for the days you didn't. Pulse works this out from your meter automatically — you don't have to log anything.
-- At the top you'll see this month's bill and how many routines you're keeping on track.
-- The "if I'd followed all 3" toggle shows what your month would look like if you kept every routine — your bill drops and the missed days fill in. It's a quick way to see the upside before you commit.
+- At the top, a **running total** shows what you've saved this month and how it compares to what's possible, with a progress bar and the CO₂ you've avoided (expressed as "km not driven").
+- **Today's actions** are ranked by impact, biggest euro first. Each shows a one-line suggestion, a green "＋€X today" money tag, a CO₂ tag, and a **Mark done** button. Tap done when you act (or let Pulse detect it from your meter) and the total and bar move up.
+- Pulse reads your meter, so the ranking is personal: a fixed-tariff home, for example, leads with solar self-consumption rather than time-of-day savings.
 
 ## How it all flows together
 
 The four screens aren't separate tools — they form a loop that helps you actually change something, not just look at charts:
 
-1. **Notice** — Home shows how you're doing and flags a timely nudge.
+1. **Notice** — Home shows how you're doing and flags a timely nudge with its euro impact.
 2. **Understand** — tap through to Insights to see why (the colored day strip and the trends), or ask the Assistant.
-3. **Commit** — hit Set reminder on a nudge (or Set this routine in the Assistant) to turn it into a routine.
-4. **Improve** — Routines tracks whether you kept it, scored from your meter, and shows the savings adding up.
+3. **Commit** — hit Set reminder on a nudge (or Add to my goals in the Assistant) to act on a recommendation.
+4. **Improve** — Goals tallies what you save, scored from your meter, and shows the running total climbing.
 
-A typical week: you glance at Home most days. When a number surprises you, you open Insights or the Assistant to find out why. Once or twice you act on a nudge and set a routine. Then you check Routines now and then to see your streaks and your savings growing.
+A typical week: you glance at Home most days. When a number surprises you, you open Insights or the Assistant to find out why. Once or twice you act on a nudge. Then you check Goals now and then to see your savings adding up.
 
 ## A few things worth knowing
 

@@ -3,7 +3,7 @@ import { BottomNav, type Tab } from "./components/BottomNav";
 import { loadDataset, type Dataset } from "./lib/data";
 import { Home } from "./screens/Home";
 import { Insights } from "./screens/Insights";
-import { Routines } from "./screens/Routines";
+import { Goals } from "./screens/Goals";
 import { Assistant } from "./screens/Assistant";
 
 export function App() {
@@ -46,8 +46,8 @@ export function App() {
   return (
     <>
       {tab === "home" && <Home ds={ds} onOpenReport={openReport} onGoAssistant={() => setTab("assistant")} />}
-      {tab === "routines" && <Routines ds={ds} />}
-      {tab === "assistant" && <Assistant ds={ds} onGoRoutines={() => setTab("routines")} />}
+      {tab === "goals" && <Goals ds={ds} />}
+      {tab === "assistant" && <Assistant ds={ds} onGoGoals={() => setTab("goals")} />}
       {tab === "insights" && (
         <Insights ds={ds} scrollTo={scrollTo} onScrolled={() => setScrollTo(null)} />
       )}

@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { Check, Send, Sparkles, Wrench } from "lucide-react";
 import type { Dataset } from "../lib/data";
 import { answer, STARTERS, type AssistantReply } from "../lib/assistant";
-import { seedRoutine, useRoutines } from "../store/routines";
+import { useGoals } from "../store/goals";
 
 type Msg =
   | { role: "user"; text: string }
@@ -10,14 +10,14 @@ type Msg =
 
 export function Assistant({
   ds,
-  onGoRoutines,
+  onGoGoals,
 }: {
   ds: Dataset;
-  onGoRoutines: () => void;
+  onGoGoals: () => void;
 }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
-  const { addRoutine, hasRoutine } = useRoutines();
+  const { setDone, isDone } = useGoals();
   const endRef = useRef<HTMLDivElement>(null);
 
   function ask(q: string) {
@@ -31,10 +31,6 @@ export function Assistant({
     );
   }
 
-  function setRoutine(id: string) {
-    const r = seedRoutine(id);
-    if (r) addRoutine(r);
-  }
 
   return (
     <div className="screen screen-pad-top" style={{ paddingBottom: 150 }}>
@@ -68,21 +64,21 @@ export function Assistant({
               </div>
               <div className="bubble">
                 {m.reply.text}
-                {m.reply.routineId && (
+                {m.reply.actionId && (
                   <div style={{ marginTop: 12 }}>
-                    {hasRoutine(m.reply.routineId) ? (
+                    {isDone(m.reply.actionId) ? (
                       <button
-                        className="btn btn-set is-set"
-                        onClick={onGoRoutines}
+                        className="btn btn-done is-done"
+                        onClick={onGoGoals}
                       >
-                        <Check size={15} /> Routine set — view it
+                        <Check size={15} /> Added — view goals
                       </button>
                     ) : (
                       <button
                         className="btn btn-accent"
-                        onClick={() => setRoutine(m.reply.routineId!)}
+                        onClick={() => setDone(m.reply.actionId!, true)}
                       >
-                        Set this routine
+                        Add to my goals
                       </button>
                     )}
                   </div>
