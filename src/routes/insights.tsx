@@ -1,12 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Clock, Coins, Zap } from "lucide-react";
+import { z } from "zod";
 
-import { AppShell } from "@/components/AppShell";
-import weekly from "@/data/weekly.json";
-import insights from "@/data/insights.json";
-import bills from "@/data/monthly_bills.json";
+import { AppShell, useActiveHouseholdId } from "@/components/AppShell";
+import { getWeeklyViewFn } from "@/lib/data-functions";
+import { DEFAULT_HOUSEHOLD_ID } from "@/lib/demo-config";
+
+const searchSchema = z.object({ hh: z.string().optional() });
+
+function weeklyQueryOptions(householdId: string) {
+  return queryOptions({
+    queryKey: ["weekly-view", householdId],
+    queryFn: () => getWeeklyViewFn({ data: { householdId } }),
+    staleTime: 60_000,
+  });
+}
 
 export const Route = createFileRoute("/insights")({
+  validateSearch: searchSchema,
+  loaderDeps: ({ search }) => ({ hh: search.hh ?? DEFAULT_HOUSEHOLD_ID }),
+  loader: ({ context, deps }) =>
+    context.queryClient.ensureQueryData(weeklyQueryOptions(deps.hh)),
   head: () => ({
     meta: [
       { title: "Insights — Enpal Pulse" },
@@ -17,10 +32,10 @@ export const Route = createFileRoute("/insights")({
 });
 
 function InsightsPage() {
-  const w = weekly;
+  const householdId = useActiveHouseholdId();
+  const { data } = useSuspenseQuery(weeklyQueryOptions(householdId));
+  const { weekly: w, insights, bills } = data;
   const isSaved = w.week_saved_eur > 0;
-
-  // sparkline-ish: just show daily costs
   const maxCost = Math.max(...w.days.map((d) => d.energy_cost_eur), 1);
 
   return (
@@ -32,12 +47,11 @@ function InsightsPage() {
           <p className="text-stone mt-1">A simple look at how your home performed.</p>
         </div>
 
-        {/* Headline savings card */}
         <section className="card-soft p-7 md:p-9">
           <div className="flex items-start justify-between gap-6 flex-wrap">
             <div>
               <div className="text-stone font-semibold text-sm uppercase tracking-wider">
-                Total saved this week
+                {isSaved ? "Total saved this week" : "Above baseline this week"}
               </div>
               <div className={`mt-3 font-display text-5xl md:text-6xl ${isSaved ? "text-grass" : "text-navy"}`}>
                 {isSaved ? "€" : "−€"}
@@ -46,7 +60,7 @@ function InsightsPage() {
               <p className="mt-3 text-stone max-w-md">
                 {isSaved
                   ? "vs. buying the same energy at average grid prices, your solar + battery + smart shifting cut your bill."
-                  : "Your home spent slightly more than the baseline this week — likely due to elevated heat pump use."}
+                  : "Your home spent slightly more than the baseline this week — likely due to elevated heat pump or EV charging use."}
               </p>
             </div>
             <div className={`px-4 py-3 rounded-2xl ${isSaved ? "bg-grass/15 text-grass" : "bg-cta/30 text-navy"}`}>
@@ -65,7 +79,7 @@ function InsightsPage() {
               icon={<Zap className="w-4 h-4" />}
               label="Energy consumed"
               value={`${w.week_consumption_kwh.toFixed(0)} kWh`}
-              sub={`across 7 days`}
+              sub="across 7 days"
             />
             <Followup
               icon={<Clock className="w-4 h-4" />}
@@ -76,7 +90,6 @@ function InsightsPage() {
           </div>
         </section>
 
-        {/* Daily costs sparkline */}
         <section className="card-soft p-6 md:p-7">
           <h2 className="text-navy text-2xl mb-1">Daily energy cost</h2>
           <p className="text-stone text-sm">Last 7 days</p>
@@ -96,35 +109,36 @@ function InsightsPage() {
           </div>
         </section>
 
-        {/* Pre-detected insights list */}
-        <section>
-          <h2 className="text-navy text-2xl mb-3">Recent insights</h2>
-          <div className="space-y-3">
-            {insights.slice(0, 3).map((i, idx) => (
-              <article key={idx} className="card-soft p-5">
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-display ${
-                      i.severity === "high" ? "bg-destructive/10 text-destructive" : "bg-cta/30 text-navy"
-                    }`}
-                  >
-                    {i.type === "anomaly" ? "!" : i.type === "nudge" ? "★" : "i"}
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold uppercase tracking-wider text-stone">
-                      {i.type} · {i.period}
+        {insights.length > 0 && (
+          <section>
+            <h2 className="text-navy text-2xl mb-3">Recent insights</h2>
+            <div className="space-y-3">
+              {insights.slice(0, 3).map((i, idx) => (
+                <article key={idx} className="card-soft p-5">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-sm font-display ${
+                        i.severity === "high" ? "bg-destructive/10 text-destructive" : "bg-cta/30 text-navy"
+                      }`}
+                    >
+                      {i.type === "anomaly" ? "!" : i.type === "nudge" ? "★" : "i"}
                     </div>
-                    <h3 className="text-navy text-lg mt-0.5">{i.title}</h3>
-                    <p className="text-stone text-sm mt-1">{i.detail}</p>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wider text-stone">
+                        {i.type} · {i.period}
+                      </div>
+                      <h3 className="text-navy text-lg mt-0.5">{i.title}</h3>
+                      <p className="text-stone text-sm mt-1">{i.detail}</p>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <p className="text-xs text-stone text-center">
-          Based on {bills.length} months of bills and your live energy data.
+          Based on {bills.length} months of bills and your 15-min energy data.
         </p>
       </div>
     </AppShell>

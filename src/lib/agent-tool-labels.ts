@@ -9,5 +9,7 @@ export const toolSourceLabels = {
   find_best_charging_window: "live prices",
   get_monthly_bills: "monthly bills",
   get_insights: "insights",
+  get_today_summary: "today's energy",
+  get_weekly_summary: "weekly energy",
   get_recent_consumption: "consumption history",
 } as const;
