@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import {
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   Car,
   Check,
+  Lightbulb,
   Maximize2,
   Plus,
   WashingMachine,
@@ -73,6 +75,38 @@ export function Home({
           More soon
         </div>
       </div>
+
+      {home.alerts.length > 0 && (
+        <>
+          <div className="section-title">Alerts & nudges</div>
+          <div className="stack">
+            {home.alerts.map((alert) => {
+              const Icon = alert.type === "anomaly" ? AlertTriangle : Lightbulb;
+              return (
+                <div key={`${alert.type}-${alert.period}`} className="card card-pad rec-card">
+                  <div className={`rec-icon ${alert.severity === "high" ? "alert" : ""}`}>
+                    <Icon size={20} />
+                  </div>
+                  <div className="rec-body">
+                    <div className="between">
+                      <div className="rec-title">{alert.title}</div>
+                      <span className={`pill ${alert.severity === "high" ? "high" : "info"}`}>
+                        {alert.type}
+                      </span>
+                    </div>
+                    <div className="rec-text">
+                      {alert.detail} {alert.suggestedAction}
+                    </div>
+                    <div className="muted tiny" style={{ marginTop: 6 }}>
+                      {alert.period}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className="section-title">Reminders for you</div>
       <div className="stack">
