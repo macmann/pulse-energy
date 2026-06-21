@@ -8,7 +8,8 @@ import { Goals } from "./screens/Goals";
 import { Assistant } from "./screens/Assistant";
 
 const SESSION_KEY = "pulse-household-id";
-const LOGO_SRC = "https://i.ibb.co/tTwKJb9z/Gemini-Generated-Image-h9rtruh9rtruh9rt.png";
+// const LOGO_SRC = "https://i.ibb.co/tTwKJb9z/Gemini-Generated-Image-h9rtruh9rtruh9rt.png";
+const LOGO_SRC = "/icons/logo.png";
 
 export function App() {
   const [householdId, setHouseholdId] = useState(() => localStorage.getItem(SESSION_KEY) ?? "");
