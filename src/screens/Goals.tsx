@@ -5,7 +5,7 @@ import type { InsightEvent } from "../types";
 import { buildGoals } from "../lib/views";
 import { CO2_KG_PER_KM } from "../lib/engine";
 import { useGoals } from "../store/goals";
-import { eur } from "../lib/format";
+import { eur, formatEventPeriod } from "../lib/format";
 import { ActionCard } from "../components/ActionCard";
 
 type InsightCategory = "all" | InsightEvent["type"];
@@ -158,7 +158,9 @@ function ActualInsightCard({
         <div className="actual-insight-summary">
           <div className="between actual-insight-meta">
             <span className="metric-label">{CATEGORY_LABEL[event.type]}</span>
-            <span className={`pill ${severity}`}>{event.period}</span>
+            <span className={`event-period-pill ${severity}`}>
+              {formatEventPeriod(event.period)}
+            </span>
           </div>
           <h3>{event.title}</h3>
         </div>
