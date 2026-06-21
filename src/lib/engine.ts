@@ -91,7 +91,7 @@ export function classifyHour(
   return "avoid";
 }
 
-// Per-hour aggregate used by the Insights daily band.
+// Per-hour aggregate used by the Consumption sample-day band.
 export type HourBand = {
   hour: number;
   cls: HourClass;
@@ -506,7 +506,7 @@ export type Recommendation = {
   minor: boolean; // worth < MINOR_EUR_PER_DAY today
 };
 
-// Ranked recommendations (€ desc). The Goals screen and Home reminders both
+// Ranked recommendations (€ desc). The Recommendations screen and Home reminders both
 // read this list, so they stay consistent.
 export function rankRecommendations(
   records: TimeseriesRecord[],

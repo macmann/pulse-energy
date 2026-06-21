@@ -3,7 +3,7 @@ import { BottomNav, type Tab } from "./components/BottomNav";
 import { ProfileMenu } from "./components/ProfileMenu";
 import { loadDataset, type Dataset } from "./lib/data";
 import { Home } from "./screens/Home";
-import { Insights } from "./screens/Insights";
+import { Consumption } from "./screens/Consumption";
 import { Goals } from "./screens/Goals";
 import { Assistant } from "./screens/Assistant";
 
@@ -16,7 +16,7 @@ export function App() {
   const [ds, setDs] = useState<Dataset | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("home");
-  // When a Home card deep-links into Insights, we stash the anchor id here.
+  // When a Home card deep-links into Consumption, we stash the anchor id here.
   const [scrollTo, setScrollTo] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,10 +32,10 @@ export function App() {
       });
   }, [householdId]);
 
-  // Navigate to Insights and remember which report to scroll to.
+  // Navigate to Consumption and remember which report to scroll to.
   function openReport(reportId: string) {
     setScrollTo(reportId);
-    setTab("insights");
+    setTab("consumption");
   }
 
   function login() {
@@ -101,11 +101,11 @@ export function App() {
         <span className="app-header-title">Enpal Pulse</span>
         <ProfileMenu ds={ds} onLogout={logout} />
       </header>
-      {tab === "home" && <Home ds={ds} onOpenReport={openReport} onGoAssistant={() => setTab("assistant")} />}
+      {tab === "home" && <Home ds={ds} onOpenReport={openReport} />}
       {tab === "goals" && <Goals ds={ds} />}
       {tab === "assistant" && <Assistant ds={ds} householdId={ds.household.household_id} onGoGoals={() => setTab("goals")} />}
-      {tab === "insights" && (
-        <Insights ds={ds} scrollTo={scrollTo} onScrolled={() => setScrollTo(null)} />
+      {tab === "consumption" && (
+        <Consumption ds={ds} scrollTo={scrollTo} onScrolled={() => setScrollTo(null)} />
       )}
       <BottomNav active={tab} onChange={setTab} />
     </>

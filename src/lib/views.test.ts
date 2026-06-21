@@ -11,7 +11,7 @@ import type {
   TimeseriesRecord,
 } from "../types";
 import type { Dataset } from "./data";
-import { buildEnergyProfile, buildHome } from "./views";
+import { buildConsumptionView, buildHome } from "./views";
 
 const HOUSEHOLD_ID = "HH-1001";
 const STEP_H = 0.25;
@@ -27,7 +27,7 @@ function loadDataset(): Dataset {
   const contracts = readJson<Contract[]>("contracts.json");
   const tariffs = readJson<Tariff[]>("tariffs.json");
   const bills = readJson<MonthlyBill[]>("monthly_bills.json");
-  const insights = readJson<InsightEvent[]>("insight_events.json");
+  const events = readJson<InsightEvent[]>("insight_events.json");
   const prices = readJson<{ prices: SpotPrice[] }>("dynamic_prices.json");
   const ts = readJson<{ records: TimeseriesRecord[] }>(
     "energy_timeseries_HH-1001.json",
@@ -39,19 +39,19 @@ function loadDataset(): Dataset {
     contract: contracts.find((c) => c.household_id === HOUSEHOLD_ID)!,
     tariff: tariffs.find((t) => t.tariff_id === household.tariff_id)!,
     bills: bills.filter((b) => b.household_id === HOUSEHOLD_ID),
-    insights: insights.filter((i) => i.household_id === HOUSEHOLD_ID),
+    events: events.filter((i) => i.household_id === HOUSEHOLD_ID),
     spotPrices: prices.prices,
     records: ts.records,
   };
 }
 
-describe("Energy Profile view model", () => {
+describe("Consumption view model", () => {
   const ds = loadDataset();
-  const profile = buildEnergyProfile(ds);
+  const view = buildConsumptionView(ds);
 
   it("uses the full HH-1001 15-minute record set", () => {
     expect(ds.records.length).toBe(35040);
-    expect(profile.overview.dataPeriod).toBe("2025-01-01 to 2025-12-31");
+    expect(view.overview.dataPeriod).toBe("2025-01-01 to 2025-12-31");
   });
 
   it("computes annual totals from records and bills", () => {
@@ -61,10 +61,10 @@ describe("Energy Profile view model", () => {
     );
     const billTotal = ds.bills.reduce((sum, b) => sum + b.total_bill_eur, 0);
 
-    expect(profile.annualTotals.consumptionKwh).toBeCloseTo(consumption, 1);
-    expect(profile.annualTotals.billTotalEur).toBeCloseTo(billTotal, 2);
-    expect(profile.annualTotals.gridImportKwh).toBeGreaterThan(0);
-    expect(profile.annualTotals.pvProductionKwh).toBeGreaterThan(0);
+    expect(view.annualTotals.consumptionKwh).toBeCloseTo(consumption, 1);
+    expect(view.annualTotals.billTotalEur).toBeCloseTo(billTotal, 2);
+    expect(view.annualTotals.gridImportKwh).toBeGreaterThan(0);
+    expect(view.annualTotals.pvProductionKwh).toBeGreaterThan(0);
   });
 
   it("builds dynamic retail prices from spot prices plus tariff adder", () => {
@@ -87,33 +87,43 @@ describe("Energy Profile view model", () => {
           1000,
       ) / 1000;
 
-    expect(profile.tariffFit.hourly[hour].avgRetailPrice).toBe(expected);
+    expect(view.tariffFit.hourly[hour].avgRetailPrice).toBe(expected);
   });
 
   it("includes EV, heat pump, and household load fingerprints", () => {
-    expect(profile.loadBreakdown.map((l) => l.id)).toEqual([
+    expect(view.loadBreakdown.map((l) => l.id)).toEqual([
       "household",
       "heatpump",
       "ev",
     ]);
-    expect(profile.loadBreakdown.every((l) => l.kwh > 0)).toBe(true);
-    expect(profile.ev.totalKwh).toBeGreaterThan(2500);
+    expect(view.loadBreakdown.every((l) => l.kwh > 0)).toBe(true);
+    expect(view.ev.totalKwh).toBeGreaterThan(2500);
   });
 
   it("does not embed Home anomaly or nudge event copy", () => {
-    const serialized = JSON.stringify(profile);
-    expect("alerts" in profile).toBe(false);
+    const serialized = JSON.stringify(view);
+    expect("alerts" in view).toBe(false);
     expect(serialized).not.toContain("Heat pump consumed");
     expect(serialized).not.toContain("Cheapest power is around");
   });
 });
 
-describe("Home alert view", () => {
-  it("filters Home alerts to anomalies and nudges only", () => {
+describe("Home view", () => {
+  it("filters anomaly and nudge events into Home alerts", () => {
     const home = buildHome(loadDataset());
 
-    expect(home.alerts.length).toBe(2);
-    expect(home.alerts.map((a) => a.type).sort()).toEqual(["anomaly", "nudge"]);
-    expect(home.alerts.some((a) => a.title.includes("Highest bill"))).toBe(false);
+    expect(home.alerts.map((alert) => alert.type).sort()).toEqual([
+      "anomaly",
+      "nudge",
+    ]);
+    expect(home.alerts.every((alert) => alert.type !== "insight")).toBe(true);
+  });
+
+  it("uses ranked recommendations for reminders", () => {
+    const home = buildHome(loadDataset());
+
+    expect(home.reminders.length).toBeGreaterThan(0);
+    expect(home.reminders.length).toBeLessThanOrEqual(2);
+    expect(home.reminders.every((r) => !r.minor)).toBe(true);
   });
 });

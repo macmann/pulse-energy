@@ -1,6 +1,6 @@
 # Pulse Energy
 
-Pulse Energy is a modern web application built for exploring household energy usage, dynamic pricing (EPEX spot prices), §14a EnWG time-variable grid fees, smart routines, and AI-driven energy optimization insights. 
+Pulse Energy is a modern web application built for exploring household energy usage, dynamic pricing (EPEX spot prices), §14a EnWG time-variable grid fees, smart routines, and AI-driven energy optimization analysis.
 
 It features an **Agentic AI Assistant ("Pulse")** that helps users simulate energy-shifting options, analyze and compare tariffs using historical data, request missing information when necessary, and configure automated routine reminders.
 
@@ -20,14 +20,14 @@ It features an **Agentic AI Assistant ("Pulse")** that helps users simulate ener
    - Streams responses in real time using the Vercel AI SDK.
    - Intelligently routes queries using a dynamic router: `gpt-4o-mini` for simple questions/greetings and `gpt-4o` for complex calculations.
    - Proactively calls custom tools:
-     - `get_household_context` (profile & hardware settings)
+     - `get_household_context` (household & hardware settings)
      - `calculate_shift_savings` (appliance time-shifting savings based on solar surplus and EPEX spot prices)
      - `simulate_tariff_switch` (last 30 days cost simulation comparing dynamic vs. fixed rates)
      - `set_routine_reminder` (schedules routine cards in the local store)
      - `request_missing_info` (requests missing details using clean inline forms)
    - Gracefully falls back to a deterministic offline mode if the API key is not configured or the connection fails.
 2. **Dashboard**: Interactive metrics for solar PV generation, household load, spot price trends, and battery status.
-3. **Insights**: Monthly billing history and historical grid import breakdowns.
+3. **Consumption**: A descriptive 2025 household dossier covering assets, contract, bills, energy flows, load patterns, and dynamic-pricing fit.
 4. **Routines**: Configurable smart scheduling cards for home automation.
 
 ---

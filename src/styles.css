@@ -684,31 +684,31 @@ h3 {
   color: var(--accent-ink);
 }
 
-/* ---- energy profile ---- */
-.profile-hero {
+/* ---- consumption ---- */
+.consumption-hero {
   padding: 2px 2px 4px;
 }
-.profile-chip-row {
+.consumption-chip-row {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
 }
-.profile-section {
+.consumption-section {
   margin-top: 16px;
 }
-.profile-stat-grid {
+.consumption-stat-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.profile-stat {
+.consumption-stat {
   min-height: 126px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-.profile-title {
+.consumption-title {
   font-size: 18px;
   line-height: 1.25;
   margin-top: 3px;
@@ -805,45 +805,6 @@ h3 {
   to {
     transform: rotate(360deg);
   }
-}
-
-/* ---- actual insight feed ---- */
-.category-row {
-  flex-wrap: wrap;
-}
-.actual-insight-card {
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: 14px;
-  padding: 13px;
-  background: #fff;
-}
-.actual-insight-card.anomaly {
-  border-left-color: var(--bad);
-}
-.actual-insight-card.nudge {
-  border-left-color: var(--cheap);
-}
-.actual-insight-card.insight {
-  border-left-color: var(--good);
-}
-.actual-insight-card h3 {
-  margin-top: 7px;
-  font-size: 15px;
-}
-.actual-insight-card p {
-  margin: 7px 0 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-.actual-action {
-  margin-top: 10px;
-  padding: 9px 10px;
-  border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent-ink);
-  font-size: 12.5px;
-  font-weight: 700;
 }
 
 /* ── Chat AI Components ── */

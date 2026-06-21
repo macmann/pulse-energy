@@ -12,7 +12,7 @@ import {
 import type { Dataset } from "../lib/data";
 import { DEMO_TODAY, DEMO_WINTER } from "../lib/demo";
 import { eur, hourLabel, kwh, pct } from "../lib/format";
-import { buildEnergyProfile, type HourlyTariffPoint } from "../lib/views";
+import { buildConsumptionView, type HourlyTariffPoint } from "../lib/views";
 
 const CLS_LABEL: Record<string, string> = {
   solar: "Free solar",
@@ -21,16 +21,7 @@ const CLS_LABEL: Record<string, string> = {
   avoid: "Grid-heavy",
 };
 
-type InsightCategory = "all" | InsightEvent["type"];
-
-const CATEGORY_LABEL: Record<InsightCategory, string> = {
-  all: "All",
-  anomaly: "Anomalies",
-  nudge: "Nudges",
-  insight: "Insights",
-};
-
-export function Insights({
+export function Consumption({
   ds,
   scrollTo,
   onScrolled,
@@ -40,7 +31,7 @@ export function Insights({
   onScrolled: () => void;
 }) {
   const [bandDate, setBandDate] = useState(DEMO_TODAY);
-  const profile = useMemo(() => buildEnergyProfile(ds, bandDate), [ds, bandDate]);
+  const view = useMemo(() => buildConsumptionView(ds, bandDate), [ds, bandDate]);
 
   useEffect(() => {
     if (!scrollTo) return;
@@ -50,41 +41,41 @@ export function Insights({
   }, [scrollTo, onScrolled]);
 
   const sampleLine =
-    profile.sampleDay.best && profile.sampleDay.worst
+    view.sampleDay.best && view.sampleDay.worst
       ? `On this sample day, solar-covered hours ran ${hourLabel(
-          profile.sampleDay.best.start,
-        )}-${hourLabel(profile.sampleDay.best.end)}; the most grid-heavy stretch was ${hourLabel(
-          profile.sampleDay.worst.start,
-        )}-${hourLabel(profile.sampleDay.worst.end)}.`
-      : "On this sample day, the profile was read from the 15-minute meter records.";
+          view.sampleDay.best.start,
+        )}-${hourLabel(view.sampleDay.best.end)}; the most grid-heavy stretch was ${hourLabel(
+          view.sampleDay.worst.start,
+        )}-${hourLabel(view.sampleDay.worst.end)}.`
+      : "On this sample day, consumption was read from the 15-minute meter records.";
 
   return (
     <div className="screen screen-pad-top">
-      <div className="profile-hero">
-        <div className="metric-label">Unified energy view</div>
-        <h1 style={{ fontSize: 24 }}>Energy Profile</h1>
+      <div className="consumption-hero">
+        <div className="metric-label">Consumption view</div>
+        <h1 style={{ fontSize: 24 }}>Consumption</h1>
         <p className="report-note">
-          {profile.overview.householdName} in {profile.overview.city} ·{" "}
-          {profile.overview.dataPeriod}
+          {view.overview.householdName} in {view.overview.city} ·{" "}
+          {view.overview.dataPeriod}
         </p>
         <p className="report-note">
-          {profile.overview.tariffName} · contract {profile.overview.contractPeriod}
+          {view.overview.tariffName} · contract {view.overview.contractPeriod}
         </p>
-        <div className="profile-chip-row">
-          {profile.overview.assets.map((asset) => (
+        <div className="consumption-chip-row">
+          {view.overview.assets.map((asset) => (
             <span key={asset} className="chip chip-static">
               {asset}
             </span>
           ))}
         </div>
-        <p className="report-note">{profile.overview.note}</p>
+        <p className="report-note">{view.overview.note}</p>
       </div>
 
-      <section className="profile-section" id="profile-overview">
+      <section className="consumption-section" id="consumption-overview">
         <div className="section-title">At a glance</div>
-        <div className="profile-stat-grid">
-          {profile.stats.map((stat) => (
-            <div key={stat.label} className="card card-pad profile-stat">
+        <div className="consumption-stat-grid">
+          {view.stats.map((stat) => (
+            <div key={stat.label} className="card card-pad consumption-stat">
               <div className="metric-label">{stat.label}</div>
               <div className="report-big">{stat.value}</div>
               {stat.detail && <div className="muted tiny">{stat.detail}</div>}
@@ -93,65 +84,65 @@ export function Insights({
         </div>
       </section>
 
-      <section id="report-export" className="card card-pad report profile-section">
+      <section id="report-export" className="card card-pad report consumption-section">
         <SectionHead
           label="Energy flow"
           title="How energy moved through the home"
           note={`In 2025, ${kwh(
-            profile.energyFlow.ownSupplyKwh,
+            view.energyFlow.ownSupplyKwh,
           )} of consumption was covered by solar and battery, while ${kwh(
-            profile.energyFlow.gridSupplyKwh,
+            view.energyFlow.gridSupplyKwh,
           )} came from the grid.`}
         />
         <FlowRows
           rows={[
             {
               label: "Consumed from own system",
-              value: profile.energyFlow.ownSupplyKwh,
-              total: profile.annualTotals.consumptionKwh,
+              value: view.energyFlow.ownSupplyKwh,
+              total: view.annualTotals.consumptionKwh,
               tone: "good",
             },
             {
               label: "Imported from grid",
-              value: profile.energyFlow.gridSupplyKwh,
-              total: profile.annualTotals.consumptionKwh,
+              value: view.energyFlow.gridSupplyKwh,
+              total: view.annualTotals.consumptionKwh,
               tone: "bad",
             },
             {
               label: "Solar self-used",
-              value: profile.energyFlow.selfUsedSolarKwh,
-              total: profile.annualTotals.pvProductionKwh,
+              value: view.energyFlow.selfUsedSolarKwh,
+              total: view.annualTotals.pvProductionKwh,
               tone: "good",
             },
             {
               label: "Solar exported",
-              value: profile.energyFlow.exportedSolarKwh,
-              total: profile.annualTotals.pvProductionKwh,
+              value: view.energyFlow.exportedSolarKwh,
+              total: view.annualTotals.pvProductionKwh,
               tone: "bad",
             },
           ]}
         />
         <p className="report-note">
-          Exported solar earned {eur(profile.energyFlow.feedInEarnedEur)} in feed-in
+          Exported solar earned {eur(view.energyFlow.feedInEarnedEur)} in feed-in
           credit. At the household's average import price, the same energy had an
-          avoided-import value of about {eur(profile.energyFlow.exportOpportunityEur)}.
+          avoided-import value of about {eur(view.energyFlow.exportOpportunityEur)}.
         </p>
       </section>
 
-      <section id="report-savings" className="card card-pad report profile-section">
+      <section id="report-savings" className="card card-pad report consumption-section">
         <SectionHead
           label="Monthly pattern"
           title="Bills followed seasonality and solar output"
           note={`The 2025 bill total was ${eur(
-            profile.annualTotals.billTotalEur,
+            view.annualTotals.billTotalEur,
           )}. Energy charges were ${eur(
-            profile.annualTotals.energyCostEur,
-          )}, base fees were ${eur(profile.annualTotals.baseFeesEur)}, and feed-in credits were ${eur(
-            profile.annualTotals.feedInCreditEur,
+            view.annualTotals.energyCostEur,
+          )}, base fees were ${eur(view.annualTotals.baseFeesEur)}, and feed-in credits were ${eur(
+            view.annualTotals.feedInCreditEur,
           )}.`}
         />
         <div className="chart-wrap">
-          <MonthlyProfileChart data={profile.monthlyTrend} />
+          <MonthlyConsumptionChart data={view.monthlyTrend} />
         </div>
         <p className="report-note">
           Bars show imported and exported grid energy. The line shows the monthly
@@ -159,54 +150,54 @@ export function Insights({
         </p>
       </section>
 
-      <section id="report-selfsuf" className="card card-pad report profile-section">
+      <section id="report-selfsuf" className="card card-pad report consumption-section">
         <SectionHead
           label="Self-sufficiency"
-          title={`${pct(profile.annualTotals.selfSufficiencyPct)} of consumption was not imported`}
+          title={`${pct(view.annualTotals.selfSufficiencyPct)} of consumption was not imported`}
           note={`The household used ${kwh(
-            profile.annualTotals.solarSelfUseKwh,
+            view.annualTotals.solarSelfUseKwh,
           )} of its own solar production and exported ${kwh(
-            profile.annualTotals.gridExportKwh,
-          )}. Battery throughput was ${kwh(profile.annualTotals.batteryDischargeKwh)} discharged across the year.`}
+            view.annualTotals.gridExportKwh,
+          )}. Battery throughput was ${kwh(view.annualTotals.batteryDischargeKwh)} discharged across the year.`}
         />
         <div className="chart-wrap compact">
-          <SelfSufficiencyChart data={profile.monthlyTrend} />
+          <SelfSufficiencyChart data={view.monthlyTrend} />
         </div>
       </section>
 
-      <section className="card card-pad report profile-section">
+      <section className="card card-pad report consumption-section">
         <SectionHead
-          label={profile.tariffFit.type === "dynamic" ? "Dynamic tariff fit" : "Tariff fit"}
-          title={profile.tariffFit.tariffName}
-          note={`The tariff was modeled as ${profile.tariffFit.formula}. The average hourly retail price from dynamic_prices.json was €${profile.tariffFit.avgRetailPrice.toFixed(
+          label={view.tariffFit.type === "dynamic" ? "Dynamic tariff fit" : "Tariff fit"}
+          title={view.tariffFit.tariffName}
+          note={`The tariff was modeled as ${view.tariffFit.formula}. The average hourly retail price from dynamic_prices.json was €${view.tariffFit.avgRetailPrice.toFixed(
             3,
-          )}/kWh; actual imported energy averaged €${profile.tariffFit.avgImportPaid.toFixed(
+          )}/kWh; actual imported energy averaged €${view.tariffFit.avgImportPaid.toFixed(
             3,
           )}/kWh.`}
         />
         <div className="mini-grid">
-          <MiniList title="Cheapest hours" items={profile.tariffFit.cheapestHours} />
-          <MiniList title="Costliest hours" items={profile.tariffFit.expensiveHours} />
+          <MiniList title="Cheapest hours" items={view.tariffFit.cheapestHours} />
+          <MiniList title="Costliest hours" items={view.tariffFit.expensiveHours} />
         </div>
         <div className="chart-wrap">
-          <TariffFitChart data={profile.tariffFit.hourly} />
+          <TariffFitChart data={view.tariffFit.hourly} />
         </div>
         <p className="report-note">
-          {pct(profile.tariffFit.importInCheapestPct)} of grid import happened in the
-          three cheapest average hours. {pct(profile.tariffFit.importInExpensivePct)}{" "}
+          {pct(view.tariffFit.importInCheapestPct)} of grid import happened in the
+          three cheapest average hours. {pct(view.tariffFit.importInExpensivePct)}{" "}
           happened in the three costliest average hours. The highest import hours
-          were {hourList(profile.tariffFit.highestImportHours)}.
+          were {hourList(view.tariffFit.highestImportHours)}.
         </p>
       </section>
 
-      <section className="card card-pad report profile-section">
+      <section className="card card-pad report consumption-section">
         <SectionHead
           label="Load fingerprints"
           title="What used the electricity"
           note="The 15-minute records split total consumption into household base load, heat pump, and EV charging."
         />
         <div className="load-list">
-          {profile.loadBreakdown.map((load) => (
+          {view.loadBreakdown.map((load) => (
             <div key={load.id} className="load-row">
               <div className="between">
                 <div>
@@ -228,16 +219,16 @@ export function Insights({
           ))}
         </div>
         <p className="report-note">
-          EV charging totaled {kwh(profile.ev.totalKwh)}; {kwh(profile.ev.fromGridKwh)}{" "}
-          was supplied by grid import and {kwh(profile.ev.fromSolarKwh)} by solar or
+          EV charging totaled {kwh(view.ev.totalKwh)}; {kwh(view.ev.fromGridKwh)}{" "}
+          was supplied by grid import and {kwh(view.ev.fromSolarKwh)} by solar or
           battery.
         </p>
       </section>
 
-      <section className="card card-pad report profile-section">
+      <section className="card card-pad report consumption-section">
         <SectionHead
           label="Sample day"
-          title={`Meter profile for ${profile.sampleDay.date}`}
+          title={`Meter view for ${view.sampleDay.date}`}
           note={sampleLine}
         />
         <div className="row" style={{ marginTop: 12, gap: 8 }}>
@@ -254,7 +245,7 @@ export function Insights({
         </div>
         <div className="band" style={{ marginTop: 12 }}>
           {Array.from({ length: 24 }, (_, h) => {
-            const seg = profile.sampleDay.band.find((b) => b.hour === h);
+            const seg = view.sampleDay.band.find((b) => b.hour === h);
             return (
               <div
                 key={h}
@@ -304,7 +295,7 @@ function SectionHead({
       <div className="metric-label" style={{ fontSize: 13 }}>
         {label}
       </div>
-      <h2 className="profile-title">{title}</h2>
+      <h2 className="consumption-title">{title}</h2>
       <p className="report-note">{note}</p>
     </>
   );
@@ -386,7 +377,11 @@ function hourList(items: HourlyTariffPoint[]): string {
   return items.map((h) => hourLabel(h.hour)).join(", ");
 }
 
-function MonthlyProfileChart({ data }: { data: { month: string; bill: number; import: number; export: number }[] }) {
+function MonthlyConsumptionChart({
+  data,
+}: {
+  data: { month: string; bill: number; import: number; export: number }[];
+}) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data} margin={{ top: 8, right: 0, bottom: 0, left: -18 }}>

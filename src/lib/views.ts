@@ -2,6 +2,7 @@
 // the screens. Everything here is computed from the meter — nothing hardcoded.
 
 import type { Dataset } from "./data";
+import type { InsightEvent } from "../types";
 import {
   addDays,
   bestAndWorstWindow,
@@ -20,10 +21,6 @@ import {
 } from "./engine";
 import { DEMO_TODAY } from "./demo";
 import { eur } from "./format";
-import {
-  getDashboardInsightCards,
-  getTimeseriesSummary,
-} from "./dashboardMetrics";
 
 const STEP_H = 0.25;
 
@@ -76,7 +73,8 @@ export type HomeView = {
   thisWeek: WeekStats;
   lastWeek: WeekStats;
   metrics: Metric[];
-  reminders: Recommendation[]; // top items from the same ranked list as Goals
+  alerts: InsightEvent[];
+  reminders: Recommendation[]; // top items from the same ranked list as Recommendations
 };
 
 export function buildHome(ds: Dataset): HomeView {
@@ -116,18 +114,22 @@ export function buildHome(ds: Dataset): HomeView {
     },
   ];
 
+  const alerts = ds.events
+    .filter((event) => event.type === "anomaly" || event.type === "nudge")
+    .slice(0, 3);
+
   // Home reminders are the top 1–2 non-minor items from the same ranked list the
-  // Goals screen uses, so the two screens always agree.
+  // Recommendations screen uses, so the two screens always agree.
   const reminders = rankRecommendations(ds.records, DEMO_TODAY)
     .filter((r) => !r.minor)
     .slice(0, 2);
 
-  return { thisWeek, lastWeek, metrics, reminders };
+  return { thisWeek, lastWeek, metrics, alerts, reminders };
 }
 
-// ---- Energy Profile ----
+// ---- Consumption ----
 
-export type ProfileStat = {
+export type ConsumptionStat = {
   label: string;
   value: string;
   detail?: string;
@@ -202,7 +204,7 @@ export type LoadBreakdownItem = {
   detail: string;
 };
 
-export type EnergyProfileView = {
+export type ConsumptionView = {
   overview: {
     householdName: string;
     city: string;
@@ -212,7 +214,7 @@ export type EnergyProfileView = {
     assets: string[];
     note: string;
   };
-  stats: ProfileStat[];
+  stats: ConsumptionStat[];
   annualTotals: AnnualTotals;
   energyFlow: EnergyFlow;
   monthlyTrend: MonthlyTrendPoint[];
@@ -234,58 +236,42 @@ type MonthlyLoad = {
   heatpump: number;
 };
 
-export function buildEnergyProfile(
+export function buildConsumptionView(
   ds: Dataset,
   bandDate = DEMO_TODAY,
-): EnergyProfileView {
+): ConsumptionView {
   const band = classifyDay(recordsForDate(ds.records, bandDate));
   const { best, worst } = bestAndWorstWindow(band);
 
   const ev = evPattern(ds.records);
   const evShift = evWaste(ds.records);
   const surplusYear = surplusSummary(ds.records);
-  const dashboardCards = getDashboardInsightCards({
-    monthlyBills: ds.bills,
-    contract: ds.tariff,
-    timeseriesSummary: getTimeseriesSummary(ds.records),
-  });
+  const annualTotals = buildAnnualTotals(ds);
+  const energyFlow = buildEnergyFlow(annualTotals, surplusYear);
+  const monthlyTrend = buildMonthlyTrend(ds);
+  const tariffFit = buildTariffFit(ds, annualTotals);
+  const loadBreakdown = buildLoadBreakdown(ds, annualTotals, ev);
 
-  const trend = ds.bills.map((b) => ({
-    month: b.month.slice(5), // "MM"
-    bill: round(b.total_bill_eur, 0),
-    export: round(b.grid_export_kwh, 0),
-    selfsuf: round(b.self_sufficiency_pct, 0),
-  }));
-
-  const reports: ReportView[] = [
+  const stats: ConsumptionStat[] = [
     {
-      id: "report-savings",
-      title: dashboardCards.billOpportunity.title,
-      big: dashboardCards.billOpportunity.big,
-      changeText: dashboardCards.billOpportunity.changeText,
-      changeGood: true,
-      chartKind: "bill",
-      note: dashboardCards.billOpportunity.note,
+      label: "Annual consumption",
+      value: `${annualTotals.consumptionKwh.toFixed(0)} kWh`,
+      detail: "from the 15-minute meter records",
     },
     {
-      id: "report-export",
-      title: dashboardCards.export.title,
-      big: dashboardCards.export.big,
-      changeText: dashboardCards.export.changeText,
-      changeGood: false,
-      chartKind: "export",
-      note: dashboardCards.export.note,
+      label: "Grid import",
+      value: `${annualTotals.gridImportKwh.toFixed(0)} kWh`,
+      detail: `average paid €${annualTotals.avgImportPriceEurPerKwh.toFixed(3)}/kWh`,
     },
     {
-      id: "report-selfsuf",
-      title: dashboardCards.selfSufficiency.title,
-      big: dashboardCards.selfSufficiency.big,
-      changeText: dashboardCards.selfSufficiency.changeText,
-      changeGood:
-        (dashboardCards.selfSufficiency.latestPct ?? 0) >=
-        (dashboardCards.selfSufficiency.previousPct ?? 0),
-      chartKind: "selfsuf",
-      note: dashboardCards.selfSufficiency.note,
+      label: "Self-sufficiency",
+      value: `${annualTotals.selfSufficiencyPct.toFixed(0)}%`,
+      detail: "covered by solar and battery instead of grid import",
+    },
+    {
+      label: "Solar exported",
+      value: `${annualTotals.gridExportKwh.toFixed(0)} kWh`,
+      detail: `earned €${annualTotals.feedInCreditEur.toFixed(0)} feed-in credit`,
     },
   ];
 
@@ -564,7 +550,7 @@ function dataPeriod(ds: Dataset): string {
   return `${first} to ${last}`;
 }
 
-// ---- Goals ----
+// ---- Recommendations ----
 
 export type GoalsView = {
   recommendations: Recommendation[]; // ranked € desc

@@ -28,7 +28,7 @@ export function Goals({ ds }: { ds: Dataset }) {
 
   return (
     <div className="screen screen-pad-top">
-      <h1 style={{ fontSize: 22 }}>Recommandation</h1>
+      <h1 style={{ fontSize: 22 }}>Recommendations</h1>
 
       {/* Hero — running savings total */}
       <div className="goal-hero" style={{ marginTop: 14 }}>
