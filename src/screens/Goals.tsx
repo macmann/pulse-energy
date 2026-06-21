@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Leaf } from "lucide-react";
+import { ChevronDown, Leaf } from "lucide-react";
 import type { Dataset } from "../lib/data";
 import type { InsightEvent } from "../types";
 import { buildGoals } from "../lib/views";
@@ -27,6 +27,9 @@ const INSIGHT_CATEGORIES: InsightCategory[] = [
 export function Goals({ ds }: { ds: Dataset }) {
   const g = useMemo(() => buildGoals(ds), [ds]);
   const [category, setCategory] = useState<InsightCategory>("all");
+  const [openInsightKeys, setOpenInsightKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const { done } = useGoals();
   const categorizedInsights = useMemo(() => {
     return category === "all"
