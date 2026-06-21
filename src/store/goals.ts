@@ -1,5 +1,5 @@
 // Shared store for the recommend -> act -> impact loop. Home reminders, the AI
-// assistant and the Goals screen all read/write the same per-recommendation
+// assistant and the Recommendations screen all read/write the same per-recommendation
 // "done" state, so acting in one place updates the others.
 
 import { create } from "zustand";

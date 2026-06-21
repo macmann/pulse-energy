@@ -1,12 +1,12 @@
 import { Home, MessageCircle, Sparkles, Target } from "lucide-react";
 
-export type Tab = "home" | "assistant" | "insights" | "goals";
+export type Tab = "home" | "assistant" | "consumption" | "goals";
 
 const TABS: { id: Tab; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Home", Icon: Home },
   { id: "assistant", label: "Assistant", Icon: MessageCircle },
-  { id: "insights", label: "Consumptions", Icon: Sparkles },
-  { id: "goals", label: "Recommendation", Icon: Target },
+  { id: "consumption", label: "Consumption", Icon: Sparkles },
+  { id: "goals", label: "Recommendations", Icon: Target },
 ];
 
 export function BottomNav({

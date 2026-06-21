@@ -22,12 +22,12 @@ async function getJson<T>(file: string): Promise<T> {
 
 export type Dataset = {
   household: Household;
+  contract: Contract;
   tariff: Tariff;
   bills: MonthlyBill[];
-  insights: InsightEvent[];
+  events: InsightEvent[];
   spotPrices: SpotPrice[];
   records: TimeseriesRecord[];
-  contract: Contract;
 };
 
 const cache = new Map<string, Promise<Dataset>>();
@@ -38,13 +38,13 @@ export function loadDataset(householdId: string): Promise<Dataset> {
   if (cached) return cached;
 
   const request = (async () => {
-    const [households, tariffs, billsAll, insightsAll, contracts, prices] =
+    const [households, contracts, tariffs, billsAll, eventsAll, prices] =
       await Promise.all([
         getJson<Household[]>("households.json"),
+        getJson<Contract[]>("contracts.json"),
         getJson<Tariff[]>("tariffs.json"),
         getJson<MonthlyBill[]>("monthly_bills.json"),
         getJson<InsightEvent[]>("insight_events.json"),
-        getJson<Contract[]>("contracts.json"),
         getJson<{ prices: SpotPrice[] }>("dynamic_prices.json"),
       ]);
 
@@ -59,12 +59,12 @@ export function loadDataset(householdId: string): Promise<Dataset> {
 
     return {
       household,
+      contract,
       tariff,
       bills: billsAll.filter((b) => b.household_id === normalizedId),
-      insights: insightsAll.filter((i) => i.household_id === normalizedId),
+      events: eventsAll.filter((i) => i.household_id === normalizedId),
       spotPrices: prices.prices,
       records: ts.records,
-      contract,
     };
   })();
   cache.set(normalizedId, request);

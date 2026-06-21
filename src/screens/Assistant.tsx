@@ -154,14 +154,14 @@ export function Assistant({
                             className="btn btn-set is-set"
                             onClick={onGoGoals}
                           >
-                            <Check size={15} /> Goal activated — view it
+                            <Check size={15} /> Recommendation activated — view it
                           </button>
                         ) : (
                           <button
                             className="btn btn-accent"
                             onClick={() => activateGoal(m.reply.actionId!)}
                           >
-                            Activate this goal
+                            Activate this recommendation
                           </button>
                         )}
                       </div>

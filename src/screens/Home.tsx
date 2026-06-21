@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import {
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   Car,
@@ -7,6 +8,7 @@ import {
   Leaf,
   Maximize2,
   Plus,
+  Sparkles,
   Thermometer,
   WashingMachine,
 } from "lucide-react";
@@ -23,7 +25,6 @@ export function Home({
 }: {
   ds: Dataset;
   onOpenReport: (id: string) => void;
-  onGoAssistant: () => void;
 }) {
   const home = useMemo(() => buildHome(ds), [ds]);
   const hh = ds.household;
@@ -70,6 +71,49 @@ export function Home({
           More soon
         </div>
       </div>
+
+      {home.alerts.length > 0 && (
+        <>
+          <div className="section-title">Alerts & nudges</div>
+          <div className="stack">
+            {home.alerts.map((alert) => {
+              const Icon = alert.type === "anomaly" ? AlertTriangle : Sparkles;
+              return (
+                <div
+                  key={`${alert.type}-${alert.period}-${alert.title}`}
+                  className="card card-pad"
+                >
+                  <div className="rec-card">
+                    <div
+                      className={`rec-icon${
+                        alert.type === "anomaly" ? " alert" : ""
+                      }`}
+                    >
+                      <Icon size={20} />
+                    </div>
+                    <div className="rec-body">
+                      <div className="between">
+                        <div className="rec-title">{alert.title}</div>
+                        <span
+                          className={`pill ${
+                            alert.severity === "high" ? "high" : "info"
+                          }`}
+                        >
+                          {alert.period}
+                        </span>
+                      </div>
+                      <div className="rec-text">{alert.detail}</div>
+                      <div className="tiny muted" style={{ marginTop: 6 }}>
+                        {alert.suggested_action}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className="section-title">Reminders</div>
       <div className="stack">

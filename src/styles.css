@@ -217,6 +217,10 @@ h3 {
   align-items: center;
   justify-content: center;
 }
+.rec-icon.alert {
+  background: var(--bad-soft);
+  color: var(--bad);
+}
 .rec-body {
   flex: 1;
   min-width: 0;
@@ -556,6 +560,12 @@ h3 {
 .chip:active {
   background: #f1f2f4;
 }
+.chip-static {
+  cursor: default;
+}
+.chip-static:active {
+  background: var(--card);
+}
 .composer {
   position: fixed;
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
@@ -623,8 +633,10 @@ h3 {
   transition: background 0.12s;
 }
 .nav-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
+  line-height: 1.05;
+  text-align: center;
 }
 .nav-btn.active {
   color: var(--accent-ink);
@@ -665,28 +677,6 @@ h3 {
   background: var(--accent-soft);
   color: var(--accent-ink);
 }
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  gap: 14px;
-  color: var(--muted);
-}
-.spinner {
-  width: 34px;
-  height: 34px;
-  border: 3px solid var(--line);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 /* ---- actual insight feed ---- */
 .category-row {
@@ -725,6 +715,129 @@ h3 {
   color: var(--accent-ink);
   font-size: 12.5px;
   font-weight: 700;
+}
+
+/* ---- consumption ---- */
+.consumption-hero {
+  padding: 2px 2px 4px;
+}
+.consumption-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.consumption-section {
+  margin-top: 16px;
+}
+.consumption-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.consumption-stat {
+  min-height: 126px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.consumption-title {
+  font-size: 18px;
+  line-height: 1.25;
+  margin-top: 3px;
+}
+.chart-wrap {
+  height: 170px;
+  margin-top: 14px;
+  margin-left: -8px;
+}
+.chart-wrap.compact {
+  height: 145px;
+}
+.flow-list,
+.load-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+.flow-row,
+.load-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.flow-track {
+  height: 9px;
+  border-radius: 999px;
+  background: #edf0f2;
+  overflow: hidden;
+}
+.flow-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+.flow-fill.good {
+  background: var(--good);
+}
+.flow-fill.bad {
+  background: var(--bad);
+}
+.mini-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 14px;
+}
+.mini-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fafbfc;
+  padding: 12px;
+}
+.mini-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.mini-line strong {
+  font-size: 11px;
+  color: var(--ink);
+}
+.load-value {
+  text-align: right;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.load-value span {
+  display: block;
+  color: var(--muted);
+  font-weight: 600;
+}
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 14px;
+  color: var(--muted);
+}
+.spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Chat AI Components ── */

@@ -5,12 +5,12 @@
 
 import type { Dataset } from "./data";
 import type { ActionId } from "./engine";
-import { buildInsights } from "./views";
+import { buildConsumptionView } from "./views";
 
 export type AssistantReply = {
   toolLabel: string; // shown as a chip above the answer: how the AI reasoned
   text: string;
-  actionId?: ActionId; // if set, the answer offers an "Add to my goals" button
+  actionId?: ActionId; // if set, the answer offers a recommendations action button
 };
 
 export type Starter = { q: string };
@@ -24,7 +24,7 @@ export const STARTERS: Starter[] = [
 
 export function answer(question: string, ds: Dataset): AssistantReply {
   const q = question.toLowerCase();
-  const iv = buildInsights(ds);
+  const iv = buildConsumptionView(ds);
   const bills = ds.bills;
   const last = bills[bills.length - 1];
   const prev = bills[bills.length - 2];
