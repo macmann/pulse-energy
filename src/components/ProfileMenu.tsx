@@ -6,6 +6,11 @@ const STORAGE_PREFIX = "pulse-devices-";
 
 type ProfileTab = "devices" | "contracts";
 
+// Built-in energy assets are shown from the household record and can't be
+// edited away, so we keep their names out of the user-added appliance list
+// (older saved lists may still contain them).
+const CORE_NAMES = ["solar pv", "solar panels", "home battery", "battery", "heat pump", "ev charger"];
+
 type Props = {
   ds: Dataset;
   onLogout: () => void;
@@ -15,35 +20,50 @@ export function ProfileMenu({ ds, onLogout }: Props) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>("devices");
   const storageKey = `${STORAGE_PREFIX}${ds.household.household_id}`;
-  const defaultDevices = useMemo(() => {
-    const devices = ["Solar PV", "Home battery"];
-    if (ds.household.heat_pump) devices.push("Heat pump");
-    if (ds.household.ev_charger) devices.push("EV charger");
-    return devices;
+
+  const coreDevices = useMemo(() => {
+    const h = ds.household;
+    const list = [
+      { key: "solar", emoji: "☀️", title: "Solar panels", spec: `${h.pv_kwp} kWp on the roof` },
+      { key: "battery", emoji: "🔋", title: "Battery", spec: `${h.battery_kwh} kWh · up to ${h.battery_power_kw} kW` },
+    ];
+    if (h.heat_pump) list.push({ key: "heatpump", emoji: "🌡️", title: "Heat pump", spec: "9 kW" });
+    if (h.ev_charger) list.push({ key: "ev", emoji: "🚗", title: "EV charger", spec: "Car battery 60 kWh" });
+    return list;
   }, [ds.household]);
-  const [devices, setDevices] = useState<string[]>(() => {
+
+  const loadAppliances = (): string[] => {
     const saved = localStorage.getItem(storageKey);
-    return saved ? (JSON.parse(saved) as string[]) : defaultDevices;
-  });
+    if (!saved) return [];
+    const list = JSON.parse(saved) as string[];
+    return list.filter((d) => !CORE_NAMES.includes(d.trim().toLowerCase()));
+  };
+  const [appliances, setAppliances] = useState<string[]>(loadAppliances);
   const [newDevice, setNewDevice] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey);
-    setDevices(saved ? (JSON.parse(saved) as string[]) : defaultDevices);
+    setAppliances(loadAppliances());
     setNewDevice("");
     setTab("devices");
-  }, [defaultDevices, storageKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
 
-  function saveDevices(next: string[]) {
-    setDevices(next);
+  function saveAppliances(next: string[]) {
+    setAppliances(next);
     localStorage.setItem(storageKey, JSON.stringify(next));
   }
 
-  function addDevice() {
+  function addAppliance() {
     const name = newDevice.trim();
-    if (!name || devices.some((d) => d.toLowerCase() === name.toLowerCase())) return;
-    saveDevices([...devices, name]);
+    if (!name) return;
+    const lower = name.toLowerCase();
+    if (CORE_NAMES.includes(lower) || appliances.some((d) => d.toLowerCase() === lower)) return;
+    saveAppliances([...appliances, name]);
     setNewDevice("");
+  }
+
+  function removeAppliance(name: string) {
+    saveAppliances(appliances.filter((d) => d !== name));
   }
 
   const c = ds.contract;
@@ -71,11 +91,37 @@ export function ProfileMenu({ ds, onLogout }: Props) {
 
             {tab === "devices" ? (
               <div className="stack">
-                <p className="tiny muted">Add appliances you use so Pulse can include them in consumption estimates and recommendations.</p>
-                <div className="device-list">
-                  {devices.map((device) => <span className="device-chip" key={device}>{device}</span>)}
+                <div className="section-label">Your devices</div>
+                <div className="device-cards">
+                  {coreDevices.map((d) => (
+                    <div className="device-row" key={d.key}>
+                      <span className="device-emoji" aria-hidden="true">{d.emoji}</span>
+                      <div className="device-info">
+                        <div className="device-name">{d.title}</div>
+                        <div className="device-spec">{d.spec}</div>
+                      </div>
+                      <span className="device-status">Active</span>
+                    </div>
+                  ))}
+                  {appliances.map((name) => (
+                    <div className="device-row" key={name}>
+                      <span className="device-emoji" aria-hidden="true">🔌</span>
+                      <div className="device-info">
+                        <div className="device-name">{name}</div>
+                        <div className="device-spec">Appliance</div>
+                      </div>
+                      <button
+                        className="device-remove"
+                        onClick={() => removeAppliance(name)}
+                        aria-label={`Remove ${name}`}
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <form className="add-device" onSubmit={(e) => { e.preventDefault(); addDevice(); }}>
+                <p className="tiny muted">Add appliances you use so Pulse can include them in consumption estimates and recommendations.</p>
+                <form className="add-device" onSubmit={(e) => { e.preventDefault(); addAppliance(); }}>
                   <input value={newDevice} onChange={(e) => setNewDevice(e.target.value)} placeholder="e.g. Dishwasher, dryer" />
                   <button className="btn btn-accent" type="submit"><Plus size={16} /> Add</button>
                 </form>
