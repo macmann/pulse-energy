@@ -109,6 +109,16 @@ describe("Consumption view model", () => {
 });
 
 describe("Home view", () => {
+  it("loads all meter-backed event categories for recommendations", () => {
+    const ds = loadDataset();
+
+    expect([...new Set(ds.events.map((event) => event.type))].sort()).toEqual([
+      "anomaly",
+      "insight",
+      "nudge",
+    ]);
+  });
+
   it("filters anomaly and nudge events into Home alerts", () => {
     const home = buildHome(loadDataset());
 
