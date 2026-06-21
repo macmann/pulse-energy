@@ -8,6 +8,7 @@ import { Goals } from "./screens/Goals";
 import { Assistant } from "./screens/Assistant";
 
 const SESSION_KEY = "pulse-household-id";
+const LOGO_SRC = "https://i.ibb.co/tTwKJb9z/Gemini-Generated-Image-h9rtruh9rtruh9rt.png";
 
 export function App() {
   const [householdId, setHouseholdId] = useState(() => localStorage.getItem(SESSION_KEY) ?? "");
@@ -56,7 +57,7 @@ export function App() {
     return (
       <div className="login-screen">
         <div className="login-card card card-pad">
-          <img className="login-logo" src="https://www.deutschlandcard.de/.imaging/modern_large/dam/customer-website/partner/online-partner/enpal/Enpal_logo_300x150.png/jcr:content.webp?tt=20250821110340" alt="Enpal logo" />
+          <img className="login-logo" src={LOGO_SRC} alt="Enpal logo" />
           <h1>Log in to Enpal Pulse</h1>
           <p className="muted">Enter your household ID to load that household's data. No password is needed for this prototype.</p>
           {error && <p className="error-text">{error}</p>}
@@ -94,7 +95,7 @@ export function App() {
       <header className="app-header" aria-label="Enpal Pulse header">
         <img
           className="app-header-logo"
-          src="https://www.deutschlandcard.de/.imaging/modern_large/dam/customer-website/partner/online-partner/enpal/Enpal_logo_300x150.png/jcr:content.webp?tt=20250821110340"
+          src={LOGO_SRC}
           alt="Enpal logo"
         />
         <span className="app-header-title">Enpal Pulse</span>

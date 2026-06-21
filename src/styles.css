@@ -71,11 +71,14 @@ body {
 }
 .app-header-logo {
   display: block;
-  width: 74px;
-  height: 37px;
+  width: 112px;
+  height: 40px;
   object-fit: contain;
-  border-radius: 10px;
+  object-position: center;
+  border-radius: 12px;
   background: #fff;
+  padding: 4px 8px;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
 }
 .app-header-title {
   color: var(--ink);
@@ -863,11 +866,16 @@ h3 {
   max-width: 360px;
 }
 .login-logo {
-  width: 90px;
-  height: auto;
-  border-radius: 12px;
+  display: block;
+  width: min(220px, 72%);
+  height: 84px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 18px;
   background: #fff;
-  margin-bottom: 12px;
+  padding: 10px 16px;
+  margin: 0 auto 18px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.10);
 }
 .login-card h1 {
   font-size: 25px;
