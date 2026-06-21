@@ -6,7 +6,7 @@ const TABS: { id: Tab; label: string; Icon: typeof Home }[] = [
   { id: "home", label: "Home", Icon: Home },
   { id: "assistant", label: "Assistant", Icon: MessageCircle },
   { id: "insights", label: "Consumptions", Icon: Sparkles },
-  { id: "goals", label: "Recommandation", Icon: Target },
+  { id: "goals", label: "Recommendation", Icon: Target },
 ];
 
 export function BottomNav({
