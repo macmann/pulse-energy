@@ -21,6 +21,15 @@ const CLS_LABEL: Record<string, string> = {
   avoid: "Grid-heavy",
 };
 
+type InsightCategory = "all" | InsightEvent["type"];
+
+const CATEGORY_LABEL: Record<InsightCategory, string> = {
+  all: "All",
+  anomaly: "Anomalies",
+  nudge: "Nudges",
+  insight: "Insights",
+};
+
 export function Insights({
   ds,
   scrollTo,

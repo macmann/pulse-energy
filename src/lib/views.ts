@@ -8,14 +8,22 @@ import {
   classifyDay,
   evPattern,
   evWaste,
+  kmNotDriven,
+  rankRecommendations,
   recordsBetween,
   recordsForDate,
   round,
+  savedThisMonth,
   surplusSummary,
   type HourBand,
+  type Recommendation,
 } from "./engine";
 import { DEMO_TODAY } from "./demo";
-import { eur, signedEur } from "./format";
+import { eur } from "./format";
+import {
+  getDashboardInsightCards,
+  getTimeseriesSummary,
+} from "./dashboardMetrics";
 
 const STEP_H = 0.25;
 
@@ -68,16 +76,7 @@ export type HomeView = {
   thisWeek: WeekStats;
   lastWeek: WeekStats;
   metrics: Metric[];
-  alerts: HomeAlert[];
-};
-
-export type HomeAlert = {
-  type: "anomaly" | "nudge";
-  severity: string;
-  period: string;
-  title: string;
-  detail: string;
-  suggestedAction: string;
+  reminders: Recommendation[]; // top items from the same ranked list as Goals
 };
 
 export function buildHome(ds: Dataset): HomeView {
@@ -93,7 +92,7 @@ export function buildHome(ds: Dataset): HomeView {
       id: "report-savings",
       label: "Money saved",
       value: eur(thisWeek.savedEur), // €X.XX
-      changeText: `${signedEur(savedDelta)} vs last week`,
+      changeText: `${eur(Math.abs(savedDelta))} vs last week`,
       changeUp: savedDelta >= 0,
       changeGood: savedDelta >= 0, // saving more is good
     },
@@ -111,28 +110,19 @@ export function buildHome(ds: Dataset): HomeView {
       id: "report-selfsuf",
       label: "Self-sufficiency",
       value: `${thisWeek.selfSuffPct}%`, // % integer
-      changeText: `${selfDelta >= 0 ? "up" : "down"} ${Math.abs(
-        selfDelta,
-      )} pts vs last week`,
+      changeText: `${Math.abs(selfDelta)} pts vs last week`,
       changeUp: selfDelta >= 0,
       changeGood: selfDelta >= 0, // more self-sufficient is good
     },
   ];
 
-  const alerts: HomeAlert[] = ds.insights
-    .filter((i): i is typeof i & { type: "anomaly" | "nudge" } =>
-      i.type === "anomaly" || i.type === "nudge",
-    )
-    .map((i) => ({
-      type: i.type,
-      severity: i.severity,
-      period: i.period,
-      title: i.title,
-      detail: i.detail,
-      suggestedAction: i.suggested_action,
-    }));
+  // Home reminders are the top 1–2 non-minor items from the same ranked list the
+  // Goals screen uses, so the two screens always agree.
+  const reminders = rankRecommendations(ds.records, DEMO_TODAY)
+    .filter((r) => !r.minor)
+    .slice(0, 2);
 
-  return { thisWeek, lastWeek, metrics, alerts };
+  return { thisWeek, lastWeek, metrics, reminders };
 }
 
 // ---- Energy Profile ----
@@ -254,32 +244,48 @@ export function buildEnergyProfile(
   const ev = evPattern(ds.records);
   const evShift = evWaste(ds.records);
   const surplusYear = surplusSummary(ds.records);
-  const annualTotals = buildAnnualTotals(ds);
-  const energyFlow = buildEnergyFlow(annualTotals, surplusYear);
-  const monthlyTrend = buildMonthlyTrend(ds);
-  const tariffFit = buildTariffFit(ds, annualTotals);
-  const loadBreakdown = buildLoadBreakdown(ds, annualTotals, ev);
+  const dashboardCards = getDashboardInsightCards({
+    monthlyBills: ds.bills,
+    contract: ds.tariff,
+    timeseriesSummary: getTimeseriesSummary(ds.records),
+  });
 
-  const stats: ProfileStat[] = [
+  const trend = ds.bills.map((b) => ({
+    month: b.month.slice(5), // "MM"
+    bill: round(b.total_bill_eur, 0),
+    export: round(b.grid_export_kwh, 0),
+    selfsuf: round(b.self_sufficiency_pct, 0),
+  }));
+
+  const reports: ReportView[] = [
     {
-      label: "Annual consumption",
-      value: `${annualTotals.consumptionKwh.toFixed(0)} kWh`,
-      detail: "from the 15-minute meter records",
+      id: "report-savings",
+      title: dashboardCards.billOpportunity.title,
+      big: dashboardCards.billOpportunity.big,
+      changeText: dashboardCards.billOpportunity.changeText,
+      changeGood: true,
+      chartKind: "bill",
+      note: dashboardCards.billOpportunity.note,
     },
     {
-      label: "Self-sufficiency",
-      value: `${annualTotals.selfSufficiencyPct.toFixed(0)}%`,
-      detail: "covered by solar and battery instead of grid import",
+      id: "report-export",
+      title: dashboardCards.export.title,
+      big: dashboardCards.export.big,
+      changeText: dashboardCards.export.changeText,
+      changeGood: false,
+      chartKind: "export",
+      note: dashboardCards.export.note,
     },
     {
-      label: "Solar exported",
-      value: `${annualTotals.gridExportKwh.toFixed(0)} kWh`,
-      detail: `earned €${annualTotals.feedInCreditEur.toFixed(0)} feed-in credit`,
-    },
-    {
-      label: "2025 bill total",
-      value: eur(annualTotals.billTotalEur),
-      detail: "sum of monthly bills in the dataset",
+      id: "report-selfsuf",
+      title: dashboardCards.selfSufficiency.title,
+      big: dashboardCards.selfSufficiency.big,
+      changeText: dashboardCards.selfSufficiency.changeText,
+      changeGood:
+        (dashboardCards.selfSufficiency.latestPct ?? 0) >=
+        (dashboardCards.selfSufficiency.previousPct ?? 0),
+      chartKind: "selfsuf",
+      note: dashboardCards.selfSufficiency.note,
     },
   ];
 
@@ -558,22 +564,34 @@ function dataPeriod(ds: Dataset): string {
   return `${first} to ${last}`;
 }
 
-// ---- Routines payoff numbers ----
+// ---- Goals ----
 
-export type RoutinesView = {
-  monthBill: number;
-  prevMonthBill: number;
-  simulatedBill: number; // bill if all 3 routines followed
-  stackSaveEur: number;
+export type GoalsView = {
+  recommendations: Recommendation[]; // ranked € desc
+  baseSavedEur: number; // captured this month so far (computed from the meter)
+  baseSavedCo2Kg: number;
+  baseKmNotDriven: number;
+  potentialEur: number; // sum of active recommendations' monthly potential
+  potentialCo2Kg: number;
 };
 
-export function buildRoutines(ds: Dataset, totalRoutineSave: number): RoutinesView {
-  const lastBill = ds.bills[ds.bills.length - 1];
-  const prevBill = ds.bills[ds.bills.length - 2];
+export function buildGoals(ds: Dataset): GoalsView {
+  const recommendations = rankRecommendations(ds.records, DEMO_TODAY);
+  const s = savedThisMonth(ds.records, DEMO_TODAY);
+  const potentialEur = recommendations.reduce(
+    (a, r) => a + r.monthlyPotentialEur,
+    0,
+  );
+  const potentialCo2Kg = recommendations.reduce(
+    (a, r) => a + r.monthlyPotentialCo2Kg,
+    0,
+  );
   return {
-    monthBill: round(lastBill.total_bill_eur, 2),
-    prevMonthBill: round(prevBill.total_bill_eur, 2),
-    simulatedBill: round(Math.max(0, lastBill.total_bill_eur - totalRoutineSave), 2),
-    stackSaveEur: totalRoutineSave,
+    recommendations,
+    baseSavedEur: s.eur,
+    baseSavedCo2Kg: s.co2Kg,
+    baseKmNotDriven: kmNotDriven(s.co2Kg),
+    potentialEur: round(potentialEur, 2),
+    potentialCo2Kg: round(potentialCo2Kg, 1),
   };
 }

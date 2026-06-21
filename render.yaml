@@ -1,11 +1,12 @@
 services:
   - type: web
     name: pulse-energy
-    runtime: static
+    runtime: node
+    plan: free
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    pullRequestPreviewsEnabled: true
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    startCommand: npm start
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: NODE_ENV
+        value: production
