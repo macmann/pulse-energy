@@ -504,7 +504,17 @@ export type Recommendation = {
   monthlyPotentialEur: number;
   monthlyPotentialCo2Kg: number;
   minor: boolean; // worth < MINOR_EUR_PER_DAY today
+  remindTime: string; // HH:MM, just before the action's solar/cheap window
 };
+
+// A reminder lands 15 minutes before the action's target window opens, so the
+// user has time to react before the cheap/solar hours start.
+function remindTimeFor(def: ActionDef): string {
+  const mins = Math.max(0, def.toHours[0] * 60 - 15);
+  const hh = String(Math.floor(mins / 60)).padStart(2, "0");
+  const mm = String(mins % 60).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
 
 // Ranked recommendations (€ desc). The Recommendations screen and Home reminders both
 // read this list, so they stay consistent.
@@ -526,6 +536,7 @@ export function rankRecommendations(
       monthlyPotentialEur: round(t.eur * DAYS_PER_MONTH, 2),
       monthlyPotentialCo2Kg: round(t.kwh * DAYS_PER_MONTH * CO2_KG_PER_KWH, 1),
       minor: t.eur < MINOR_EUR_PER_DAY,
+      remindTime: remindTimeFor(def),
     };
   });
   return recs.sort((a, b) => b.todaySaveEur - a.todaySaveEur);

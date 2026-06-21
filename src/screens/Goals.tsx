@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { Car, Check, Leaf, Thermometer, WashingMachine } from "lucide-react";
+import { Leaf } from "lucide-react";
 import type { Dataset } from "../lib/data";
 import type { InsightEvent } from "../types";
 import { buildGoals } from "../lib/views";
-import { CO2_KG_PER_KM, type Recommendation } from "../lib/engine";
+import { CO2_KG_PER_KM } from "../lib/engine";
 import { useGoals } from "../store/goals";
 import { eur } from "../lib/format";
-
-const ICONS = { ev: Car, preheat: Thermometer, appliances: WashingMachine };
+import { ActionCard } from "../components/ActionCard";
 
 type InsightCategory = "all" | InsightEvent["type"];
 
@@ -28,7 +27,7 @@ const INSIGHT_CATEGORIES: InsightCategory[] = [
 export function Goals({ ds }: { ds: Dataset }) {
   const g = useMemo(() => buildGoals(ds), [ds]);
   const [category, setCategory] = useState<InsightCategory>("all");
-  const { done, toggle, isDone } = useGoals();
+  const { done } = useGoals();
   const categorizedInsights = useMemo(() => {
     return category === "all"
       ? ds.events
@@ -109,12 +108,7 @@ export function Goals({ ds }: { ds: Dataset }) {
 
       <div className="stack">
         {cards.map((r) => (
-          <ActionCard
-            key={r.id}
-            r={r}
-            done={isDone(r.id)}
-            onToggle={() => toggle(r.id)}
-          />
+          <ActionCard key={r.id} r={r} />
         ))}
 
         {minor.length > 0 && (
@@ -169,49 +163,5 @@ function CategoryChip({
     >
       {label}
     </button>
-  );
-}
-
-function ActionCard({
-  r,
-  done,
-  onToggle,
-}: {
-  r: Recommendation;
-  done: boolean;
-  onToggle: () => void;
-}) {
-  const Icon = ICONS[r.icon];
-  return (
-    <div className="card card-pad">
-      <div className="rec-card">
-        <div className="rec-icon">
-          <Icon size={20} />
-        </div>
-        <div className="rec-body">
-          <div className="rec-title">{r.title}</div>
-          <div className="rec-text">{r.sentence}</div>
-        </div>
-      </div>
-      <div className="impact-row">
-        <span className="tag tag-money">＋{eur(r.todaySaveEur)} today</span>
-        <span className="tag tag-co2">
-          <Leaf size={12} /> {r.todayCo2Kg.toFixed(1)} kg
-        </span>
-        <button
-          className={`btn btn-done ${done ? "is-done" : "btn-ghost"}`}
-          onClick={onToggle}
-          aria-pressed={done}
-        >
-          {done ? (
-            <>
-              <Check size={15} /> Done
-            </>
-          ) : (
-            "Mark done"
-          )}
-        </button>
-      </div>
-    </div>
   );
 }

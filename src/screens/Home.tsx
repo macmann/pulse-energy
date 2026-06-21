@@ -3,21 +3,13 @@ import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
-  Car,
-  Check,
-  Leaf,
   Maximize2,
   Plus,
   Sparkles,
-  Thermometer,
-  WashingMachine,
 } from "lucide-react";
 import type { Dataset } from "../lib/data";
 import { buildHome } from "../lib/views";
-import { useGoals } from "../store/goals";
-import { eur } from "../lib/format";
-
-const ICONS = { ev: Car, preheat: Thermometer, appliances: WashingMachine };
+import { ActionCard } from "../components/ActionCard";
 
 export function Home({
   ds,
@@ -28,7 +20,6 @@ export function Home({
 }) {
   const home = useMemo(() => buildHome(ds), [ds]);
   const hh = ds.household;
-  const { toggle, isDone } = useGoals();
 
   return (
     <div className="screen screen-pad-top">
@@ -115,44 +106,11 @@ export function Home({
         </>
       )}
 
-      <div className="section-title">Reminders</div>
+      <div className="section-title">Today's actions</div>
       <div className="stack">
-        {home.reminders.map((r) => {
-          const Icon = ICONS[r.icon];
-          const set = isDone(r.id);
-          return (
-            <div key={r.id} className="card card-pad">
-              <div className="rec-card">
-                <div className="rec-icon">
-                  <Icon size={20} />
-                </div>
-                <div className="rec-body">
-                  <div className="rec-title">{r.title}</div>
-                  <div className="rec-text">{r.sentence}</div>
-                </div>
-              </div>
-              <div className="impact-row">
-                <span className="tag tag-money">＋{eur(r.todaySaveEur)} today</span>
-                <span className="tag tag-co2">
-                  <Leaf size={12} /> {r.todayCo2Kg.toFixed(1)} kg
-                </span>
-                <button
-                  className={`btn btn-done ${set ? "is-done" : "btn-ghost"}`}
-                  onClick={() => toggle(r.id)}
-                  aria-pressed={set}
-                >
-                  {set ? (
-                    <>
-                      <Check size={15} /> Reminder set
-                    </>
-                  ) : (
-                    "Set reminder"
-                  )}
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {home.reminders.map((r) => (
+          <ActionCard key={r.id} r={r} />
+        ))}
       </div>
     </div>
   );
