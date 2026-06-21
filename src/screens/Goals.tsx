@@ -1,5 +1,12 @@
 import { useMemo, useState } from "react";
-import { Car, Check, Leaf, Thermometer, WashingMachine } from "lucide-react";
+import {
+  Car,
+  Check,
+  ChevronDown,
+  Leaf,
+  Thermometer,
+  WashingMachine,
+} from "lucide-react";
 import type { Dataset } from "../lib/data";
 import type { InsightEvent } from "../types";
 import { buildGoals } from "../lib/views";
@@ -28,12 +35,27 @@ const INSIGHT_CATEGORIES: InsightCategory[] = [
 export function Goals({ ds }: { ds: Dataset }) {
   const g = useMemo(() => buildGoals(ds), [ds]);
   const [category, setCategory] = useState<InsightCategory>("all");
+  const [openInsightKeys, setOpenInsightKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const { done, toggle, isDone } = useGoals();
   const categorizedInsights = useMemo(() => {
     return category === "all"
       ? ds.events
       : ds.events.filter((event) => event.type === category);
   }, [category, ds.events]);
+
+  function toggleInsight(key: string) {
+    setOpenInsightKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
 
   // Running total = what the meter already captured this month + actions marked
   // done today. This MUST move when an action is toggled, so it reads the store.
@@ -67,21 +89,8 @@ export function Goals({ ds }: { ds: Dataset }) {
         </div>
       </div>
 
-      <section className="card card-pad actual-insights" style={{ marginTop: 16 }}>
-        <div className="between">
-          <div>
-            <div className="metric-label" style={{ fontSize: 13 }}>
-              Actual data insights
-            </div>
-            <h2 style={{ fontSize: 18, marginTop: 2 }}>Meter-backed categories</h2>
-          </div>
-          <span className="pill info">{categorizedInsights.length}</span>
-        </div>
-        <p className="report-note" style={{ marginTop: 8 }}>
-          These cards use the existing mock insight categories, but the copy is grounded
-          in the loaded household event data instead of placeholder text.
-        </p>
-        <div className="row category-row" style={{ marginTop: 12, gap: 8 }}>
+      <section className="actual-insights" style={{ marginTop: 16 }}>
+        <div className="row category-row" style={{ gap: 8 }}>
           {INSIGHT_CATEGORIES.map((c) => (
             <CategoryChip
               key={c}
@@ -92,12 +101,17 @@ export function Goals({ ds }: { ds: Dataset }) {
           ))}
         </div>
         <div className="stack" style={{ marginTop: 14 }}>
-          {categorizedInsights.map((event) => (
-            <ActualInsightCard
-              key={`${event.type}-${event.period}-${event.title}`}
-              event={event}
-            />
-          ))}
+          {categorizedInsights.map((event) => {
+            const key = insightKey(event);
+            return (
+              <ActualInsightCard
+                key={key}
+                event={event}
+                expanded={openInsightKeys.has(key)}
+                onToggle={() => toggleInsight(key)}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -133,17 +147,46 @@ export function Goals({ ds }: { ds: Dataset }) {
   );
 }
 
-function ActualInsightCard({ event }: { event: InsightEvent }) {
+function insightKey(event: InsightEvent): string {
+  return `${event.type}-${event.period}-${event.title}`;
+}
+
+function ActualInsightCard({
+  event,
+  expanded,
+  onToggle,
+}: {
+  event: InsightEvent;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const severity = event.severity === "high" ? "high" : "info";
   return (
     <article className={`actual-insight-card ${event.type}`}>
-      <div className="between">
-        <span className="metric-label">{CATEGORY_LABEL[event.type]}</span>
-        <span className={`pill ${severity}`}>{event.period}</span>
-      </div>
-      <h3>{event.title}</h3>
-      <p>{event.detail}</p>
-      <div className="actual-action">{event.suggested_action}</div>
+      <button
+        className="actual-insight-toggle"
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
+        <div className="actual-insight-summary">
+          <div className="between actual-insight-meta">
+            <span className="metric-label">{CATEGORY_LABEL[event.type]}</span>
+            <span className={`pill ${severity}`}>{event.period}</span>
+          </div>
+          <h3>{event.title}</h3>
+        </div>
+        <ChevronDown
+          className={`actual-insight-chevron${expanded ? " open" : ""}`}
+          size={18}
+          aria-hidden="true"
+        />
+      </button>
+      {expanded && (
+        <div className="actual-insight-body">
+          <p>{event.detail}</p>
+          <div className="actual-action">{event.suggested_action}</div>
+        </div>
+      )}
     </article>
   );
 }

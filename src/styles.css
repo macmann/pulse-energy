@@ -686,8 +686,8 @@ h3 {
   border: 1px solid var(--line);
   border-left: 4px solid var(--accent);
   border-radius: 14px;
-  padding: 13px;
   background: #fff;
+  overflow: hidden;
 }
 .actual-insight-card.anomaly {
   border-left-color: var(--bad);
@@ -698,12 +698,47 @@ h3 {
 .actual-insight-card.insight {
   border-left-color: var(--good);
 }
-.actual-insight-card h3 {
-  margin-top: 7px;
-  font-size: 15px;
+.actual-insight-toggle {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 13px;
+  text-align: left;
+  font: inherit;
 }
-.actual-insight-card p {
-  margin: 7px 0 0;
+.actual-insight-summary {
+  flex: 1;
+  min-width: 0;
+}
+.actual-insight-meta {
+  align-items: flex-start;
+}
+.actual-insight-card h3 {
+  margin-top: 6px;
+  font-size: 15px;
+  line-height: 1.25;
+}
+.actual-insight-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 0.16s ease;
+}
+.actual-insight-chevron.open {
+  transform: rotate(180deg);
+}
+.actual-insight-body {
+  border-top: 1px solid var(--line);
+  padding: 0 13px 13px;
+}
+.actual-insight-body p {
+  margin: 10px 0 0;
   color: var(--muted);
   font-size: 13px;
 }
