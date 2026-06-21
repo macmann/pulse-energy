@@ -1,8 +1,8 @@
 # Pulse Energy
 
-Pulse Energy is a modern web application built for exploring household energy usage, dynamic pricing (EPEX spot prices), §14a EnWG time-variable grid fees, smart routines, and AI-driven energy optimization analysis.
+Pulse Energy is a consumer-centric application that helps households stay informed and in control of their energy usage and contracts, set up smart routines, and leverage AI-driven insights to optimizate the available resources and personalized for their daily use.
 
-It features an **Agentic AI Assistant ("Pulse")** that helps users simulate energy-shifting options, analyze and compare tariffs using historical data, request missing information when necessary, and configure automated routine reminders.
+It features an **Agentic AI Assistant ("Pulse")** that helps users with everyday queries, simulate energy-shifting options, analyze and compare usage from live data, request missing information when necessary, and configure automated routine reminders.
 
 ---
 
@@ -29,6 +29,10 @@ It features an **Agentic AI Assistant ("Pulse")** that helps users simulate ener
 2. **Dashboard**: Interactive metrics for solar PV generation, household load, spot price trends, and battery status.
 3. **Consumption**: A descriptive 2025 household dossier covering assets, contract, bills, energy flows, load patterns, and dynamic-pricing fit.
 4. **Routines**: Configurable smart scheduling cards for home automation.
+
+---
+
+Visit the Live App: https://enpal-pulse.onrender.com/
 
 ---
 
