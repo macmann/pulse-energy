@@ -31,7 +31,7 @@ export function Home({
 
   return (
     <div className="screen screen-pad-top">
-      <div className="greeting">Hi, Becker family</div>
+      <div className="greeting">Hi, {hh.name}</div>
       <div className="muted tiny" style={{ marginTop: 4 }}>
         {hh.city} · {hh.pv_kwp} kW solar · {hh.battery_kwh} kWh battery · heat
         pump

@@ -3,6 +3,7 @@
 // timeseries (~19 MB) is fetched once and cached in-memory.
 
 import type {
+  Contract,
   Household,
   InsightEvent,
   MonthlyBill,
@@ -10,7 +11,6 @@ import type {
   Tariff,
   TimeseriesRecord,
 } from "../types";
-import { HOUSEHOLD_ID } from "./demo";
 
 const BASE = `${import.meta.env.BASE_URL}data`;
 
@@ -27,38 +27,46 @@ export type Dataset = {
   insights: InsightEvent[];
   spotPrices: SpotPrice[];
   records: TimeseriesRecord[];
+  contract: Contract;
 };
 
-let cache: Promise<Dataset> | null = null;
+const cache = new Map<string, Promise<Dataset>>();
 
-export function loadDataset(): Promise<Dataset> {
-  if (cache) return cache;
-  cache = (async () => {
-    const [households, tariffs, billsAll, insightsAll, prices, ts] =
+export function loadDataset(householdId: string): Promise<Dataset> {
+  const normalizedId = householdId.trim().toUpperCase();
+  const cached = cache.get(normalizedId);
+  if (cached) return cached;
+
+  const request = (async () => {
+    const [households, tariffs, billsAll, insightsAll, contracts, prices] =
       await Promise.all([
         getJson<Household[]>("households.json"),
         getJson<Tariff[]>("tariffs.json"),
         getJson<MonthlyBill[]>("monthly_bills.json"),
         getJson<InsightEvent[]>("insight_events.json"),
+        getJson<Contract[]>("contracts.json"),
         getJson<{ prices: SpotPrice[] }>("dynamic_prices.json"),
-        getJson<{ records: TimeseriesRecord[] }>(
-          `energy_timeseries_${HOUSEHOLD_ID}.json`,
-        ),
       ]);
 
-    const household = households.find((h) => h.household_id === HOUSEHOLD_ID);
-    if (!household) throw new Error(`Unknown household ${HOUSEHOLD_ID}`);
+    const household = households.find((h) => h.household_id === normalizedId);
+    if (!household) throw new Error(`Unknown household ${normalizedId}`);
     const tariff = tariffs.find((t) => t.tariff_id === household.tariff_id);
     if (!tariff) throw new Error(`Unknown tariff ${household.tariff_id}`);
+
+    const contract = contracts.find((c) => c.household_id === normalizedId);
+    if (!contract) throw new Error(`Unknown contract for ${normalizedId}`);
+    const ts = await getJson<{ records: TimeseriesRecord[] }>(household.timeseries_file);
 
     return {
       household,
       tariff,
-      bills: billsAll.filter((b) => b.household_id === HOUSEHOLD_ID),
-      insights: insightsAll.filter((i) => i.household_id === HOUSEHOLD_ID),
+      bills: billsAll.filter((b) => b.household_id === normalizedId),
+      insights: insightsAll.filter((i) => i.household_id === normalizedId),
       spotPrices: prices.prices,
       records: ts.records,
+      contract,
     };
   })();
-  return cache;
+  cache.set(normalizedId, request);
+  return request;
 }

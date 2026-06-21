@@ -849,3 +849,173 @@ h3 {
 .markdown-body p:last-child {
   margin-bottom: 0;
 }
+
+/* ---- login and profile ---- */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.login-card {
+  width: 100%;
+  max-width: 360px;
+}
+.login-logo {
+  width: 90px;
+  height: auto;
+  border-radius: 12px;
+  background: #fff;
+  margin-bottom: 12px;
+}
+.login-card h1 {
+  font-size: 25px;
+  margin-bottom: 8px;
+}
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0 12px;
+}
+.login-card label {
+  font-size: 13px;
+  font-weight: 700;
+}
+.login-card input,
+.add-device input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  background: #fff;
+  outline: none;
+}
+.login-card input:focus,
+.add-device input:focus {
+  border-color: var(--accent);
+}
+.error-text {
+  color: var(--bad);
+  font-size: 13px;
+  font-weight: 700;
+}
+.profile-wrap {
+  margin-left: auto;
+}
+.profile-button,
+.icon-button {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+.icon-button {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+}
+.profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(20, 24, 31, 0.28);
+  display: flex;
+  justify-content: flex-end;
+}
+.profile-panel {
+  width: min(390px, 92vw);
+  min-height: 100vh;
+  background: var(--bg);
+  padding: calc(env(safe-area-inset-top) + 18px) 16px 18px;
+  box-shadow: -12px 0 30px rgba(16, 24, 40, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.profile-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 4px;
+  border-radius: 14px;
+  background: #eef0f3;
+}
+.profile-tabs button {
+  border: none;
+  border-radius: 11px;
+  padding: 10px;
+  font: inherit;
+  font-weight: 700;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.profile-tabs button.active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--shadow);
+}
+.device-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.device-chip {
+  border-radius: 999px;
+  padding: 8px 11px;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-weight: 700;
+  font-size: 12.5px;
+}
+.add-device {
+  display: flex;
+  gap: 8px;
+}
+.add-device input {
+  flex: 1;
+}
+.contract-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+.contract-title {
+  font-weight: 800;
+  font-size: 16px;
+}
+.contract-details {
+  margin: 12px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.contract-details div {
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+.contract-details dt {
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.contract-details dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 13px;
+}

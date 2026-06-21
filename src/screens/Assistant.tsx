@@ -9,14 +9,6 @@ import { ToolRenderer } from "../components/chat/ToolRenderer";
 import { Markdown } from "../components/chat/Markdown";
 
 
-/* ── Household options ── */
-const HOUSEHOLDS = [
-  { id: "HH-1001", label: "Becker (Munich)" },
-  { id: "HH-1002", label: "Schmidt (Hamburg)" },
-  { id: "HH-1003", label: "Yilmaz (Cologne)" },
-  { id: "HH-1004", label: "WG Sonnenallee (Berlin)" },
-] as const;
-
 /* ── Fallback message shape (offline mode) ── */
 type FallbackMsg =
   | { role: "user"; text: string }
@@ -25,12 +17,13 @@ type FallbackMsg =
 /* ── Component ── */
 export function Assistant({
   ds,
+  householdId,
   onGoGoals,
 }: {
   ds: Dataset;
+  householdId: string;
   onGoGoals: () => void;
 }) {
-  const [householdId, setHouseholdId] = useState("HH-1001");
   const [useFallback, setUseFallback] = useState(false);
   const { setDone, isDone } = useGoals();
   const endRef = useRef<HTMLDivElement>(null);
@@ -106,19 +99,6 @@ export function Assistant({
       <p className="muted tiny" style={{ marginTop: 4 }}>
         about your home's energy, in plain words
       </p>
-
-      {/* Household selector */}
-      <div className="household-selector">
-        {HOUSEHOLDS.map((h) => (
-          <button
-            key={h.id}
-            className={`hh-pill ${householdId === h.id ? "active" : ""}`}
-            onClick={() => setHouseholdId(h.id)}
-          >
-            {h.label}
-          </button>
-        ))}
-      </div>
 
       {/* Offline banner */}
       {useFallback && (
